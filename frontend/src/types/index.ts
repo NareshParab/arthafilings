@@ -13,3 +13,11 @@ export interface Lead {
   email: string;
   phone: string;
 }
+
+export interface Review {
+  name: string;
+  city: string;
+  rating: number;
+  text: string;
+  date: string;
+}
