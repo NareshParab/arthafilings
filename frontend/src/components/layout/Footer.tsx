@@ -39,7 +39,7 @@ export default async function Footer() {
 
           <FooterColumn title="Services">
             {siteConfig.footer.services.map((item) => (
-              <li key={item.label} className="flex items-center gap-2">
+              <li key={item.label} className="flex flex-col items-start gap-1">
                 <Link
                   href={item.href}
                   className="text-sm text-blue-tint/80 hover:text-white"
@@ -47,7 +47,10 @@ export default async function Footer() {
                   {item.label}
                 </Link>
                 {item.comingSoon && (
-                  <Badge variant="outline" className="border-blue-tint/40 text-blue-tint/70">
+                  <Badge
+                    variant="outline"
+                    className="h-4 whitespace-nowrap border-blue-tint/40 px-1.5 text-[10px] text-blue-tint/70"
+                  >
                     Coming soon
                   </Badge>
                 )}

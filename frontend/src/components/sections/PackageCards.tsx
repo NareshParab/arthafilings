@@ -25,19 +25,19 @@ export default function PackageCards() {
             <Card
               key={pkg.id}
               className={cn(
-                "relative",
+                "h-full",
                 pkg.popular ? "ring-2 ring-primary" : "ring-border"
               )}
             >
-              {pkg.popular && (
-                <Badge className="absolute -top-3 right-4 bg-gold text-white">Popular</Badge>
-              )}
               <CardHeader>
+                {pkg.popular && (
+                  <Badge className="mb-1 w-fit bg-gold text-white">Popular</Badge>
+                )}
                 <CardTitle className="text-lg">{pkg.name}</CardTitle>
                 <p className="text-2xl font-bold text-navy">{pkg.price}</p>
                 <p className="text-xs text-muted-foreground">{pkg.govtFeeNote}</p>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1">
                 <ul className="space-y-2">
                   {pkg.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2 text-sm">
@@ -47,7 +47,7 @@ export default function PackageCards() {
                   ))}
                 </ul>
               </CardContent>
-              <CardFooter className="bg-transparent">
+              <CardFooter className="mt-auto bg-transparent">
                 <Button
                   nativeButton={false}
                   className="w-full"
