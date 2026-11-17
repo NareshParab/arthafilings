@@ -75,7 +75,7 @@ export default function Header() {
 
         <div className="hidden items-center gap-4 md:flex">
           <PhoneLink />
-          <Button render={<Link href="/login">Login</Link>} />
+          <Button nativeButton={false} render={<Link href="/login">Login</Link>} />
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -109,6 +109,7 @@ export default function Header() {
               ))}
               <PhoneLink />
               <Button
+                nativeButton={false}
                 render={
                   <Link href="/login" onClick={() => setOpen(false)}>
                     Login
