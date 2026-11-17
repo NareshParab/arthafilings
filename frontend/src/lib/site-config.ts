@@ -16,12 +16,6 @@ export const siteConfig = {
   ],
 
   footer: {
-    services: [
-      { label: "Proprietorship Registration", href: "/proprietorship-registration", comingSoon: false },
-      { label: "GST Registration", href: "#", comingSoon: true },
-      { label: "Trademark Registration", href: "#", comingSoon: true },
-      { label: "Company Registration", href: "#", comingSoon: true },
-    ],
     company: [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
