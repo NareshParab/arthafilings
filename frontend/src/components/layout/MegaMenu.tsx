@@ -159,7 +159,7 @@ export default function MegaMenu() {
     <>
       <nav
         ref={navRef}
-        className="hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto xl:flex"
+        className="hidden flex-1 items-center justify-between xl:flex"
         aria-label="Service categories"
       >
         {serviceGroups.map((group, index) => {
@@ -174,7 +174,7 @@ export default function MegaMenu() {
               variant="ghost"
               size="sm"
               className={cn(
-                "gap-1 whitespace-nowrap px-2.5 text-[15px] text-foreground",
+                "gap-0.5 whitespace-nowrap px-2 text-[14px] font-medium text-foreground",
                 isOpen && "bg-muted text-primary"
               )}
               aria-haspopup="true"

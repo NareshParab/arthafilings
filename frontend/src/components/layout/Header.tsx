@@ -67,13 +67,23 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card">
       <TopBar />
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-4 px-4 xl:px-6">
         <Logo className="shrink-0" />
 
         <MegaMenu />
 
         <div className="flex shrink-0 items-center gap-2">
-          <Button nativeButton={false} render={<Link href="/login">Login</Link>} />
+          <Button
+            nativeButton={false}
+            size="sm"
+            className="hidden xl:inline-flex"
+            render={<Link href="/login">Login</Link>}
+          />
+          <Button
+            nativeButton={false}
+            className="xl:hidden"
+            render={<Link href="/login">Login</Link>}
+          />
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger

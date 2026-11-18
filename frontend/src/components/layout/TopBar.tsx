@@ -12,7 +12,7 @@ function buildWhatsAppHref() {
 export default function TopBar() {
   return (
     <div className="hidden bg-navy xl:block">
-      <div className="mx-auto flex h-9 max-w-6xl items-center justify-between px-4 text-xs text-blue-tint/90 sm:px-6">
+      <div className="mx-auto flex h-9 max-w-[1440px] items-center justify-between px-4 text-xs text-blue-tint/90 xl:px-6">
         <div className="flex items-center gap-4">
           <a
             href={`tel:${siteConfig.phone.replace(/\s+/g, "")}`}
