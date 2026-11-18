@@ -1,3 +1,5 @@
+import { LeadsPage } from "@/components/admin/LeadsPage";
+
 export default function AdminLeadsPage() {
-  return <div>Admin Leads - placeholder</div>;
+  return <LeadsPage />;
 }
