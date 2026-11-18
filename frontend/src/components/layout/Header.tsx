@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import Logo from "@/components/layout/Logo";
+import MegaMenu, { ServiceGroupAccordion } from "@/components/layout/MegaMenu";
 import { siteConfig } from "@/lib/site-config";
 
 function NavLink({
@@ -62,7 +63,9 @@ export default function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Logo />
 
-        <nav className="hidden items-center gap-6 md:flex" aria-label="Primary">
+        <MegaMenu />
+
+        <div className="hidden items-center gap-4 lg:flex">
           {siteConfig.headerNav.map((item) => (
             <NavLink
               key={item.href}
@@ -71,7 +74,7 @@ export default function Header() {
               active={pathname === item.href}
             />
           ))}
-        </nav>
+        </div>
 
         <div className="hidden items-center gap-4 md:flex">
           <PhoneLink />
@@ -91,13 +94,14 @@ export default function Header() {
           >
             <Menu aria-hidden="true" />
           </SheetTrigger>
-          <SheetContent side="right">
+          <SheetContent side="right" className="overflow-y-auto">
             <SheetHeader>
               <SheetTitle>
                 <Logo />
               </SheetTitle>
             </SheetHeader>
-            <nav className="flex flex-col gap-4 px-4" aria-label="Primary">
+            <nav className="flex flex-col gap-4 px-4 pb-4" aria-label="Primary">
+              <ServiceGroupAccordion onNavigate={() => setOpen(false)} />
               {siteConfig.headerNav.map((item) => (
                 <NavLink
                   key={item.href}

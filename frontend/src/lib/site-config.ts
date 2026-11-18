@@ -9,8 +9,6 @@ export const siteConfig = {
   email: "contact@arthafilings.com", // [VERIFY]
 
   headerNav: [
-    { label: "Home", href: "/" },
-    { label: "Proprietorship Registration", href: "/proprietorship-registration" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ],
