@@ -15,6 +15,7 @@ import {
 import Logo from "@/components/layout/Logo";
 import TopBar from "@/components/layout/TopBar";
 import MegaMenu, { ServiceGroupAccordion } from "@/components/layout/MegaMenu";
+import AccountMenu from "@/components/layout/AccountMenu";
 import { siteConfig } from "@/lib/site-config";
 
 function buildWhatsAppHref() {
@@ -73,17 +74,8 @@ export default function Header() {
         <MegaMenu />
 
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            nativeButton={false}
-            size="sm"
-            className="hidden xl:inline-flex"
-            render={<Link href="/login">Login</Link>}
-          />
-          <Button
-            nativeButton={false}
-            className="xl:hidden"
-            render={<Link href="/login">Login</Link>}
-          />
+          <AccountMenu size="sm" className="hidden xl:inline-flex" />
+          <AccountMenu className="xl:hidden" />
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
@@ -126,14 +118,7 @@ export default function Header() {
                   <MessageCircle className="size-4" aria-hidden="true" />
                   WhatsApp
                 </a>
-                <Button
-                  nativeButton={false}
-                  render={
-                    <Link href="/login" onClick={() => setOpen(false)}>
-                      Login
-                    </Link>
-                  }
-                />
+                <AccountMenu className="w-full" onNavigate={() => setOpen(false)} />
               </nav>
             </SheetContent>
           </Sheet>

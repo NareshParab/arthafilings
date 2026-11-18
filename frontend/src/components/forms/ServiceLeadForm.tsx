@@ -21,6 +21,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { siteConfig } from "@/lib/site-config";
 import { mockVerifyOtp } from "@/lib/mock-api";
+import { saveLeadDraft } from "@/lib/mock-session";
 import { extraFieldConfigs, extraFieldsZodShape, defaultValuesForExtraFields } from "@/lib/service-forms";
 import { indiaStatesAndUts } from "@/data/india-states";
 import { countries } from "@/data/countries";
@@ -133,6 +134,7 @@ function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
       extra[field] = rest[field] ?? "";
     }
     setLead({ name, email, phone, serviceSlug: service.slug, extra, utm });
+    saveLeadDraft({ name, email, phone });
     setSecondsLeft(RESEND_SECONDS);
     setStep("otp");
   }
