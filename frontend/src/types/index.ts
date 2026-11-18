@@ -67,3 +67,48 @@ export interface Coupon {
   type: "percent" | "flat";
   value: number; // percent: 1-100. flat: paise.
 }
+
+export interface DocumentRequirement {
+  id: string;
+  label: string;
+  hint: string;
+  required: boolean;
+}
+
+export type UploadedDocumentStatus = "uploaded" | "accepted" | "rejected";
+
+export interface UploadedDocument {
+  id: string;
+  requirementId: string;
+  fileName: string;
+  sizeBytes: number;
+  mimeType: string;
+  status: UploadedDocumentStatus;
+  rejectReason?: string;
+  uploadedAt: string;
+}
+
+export interface DeliveredDocument {
+  id: string;
+  label: string;
+  fileName: string;
+  issuedAt: string;
+}
+
+export type TimelineStepState = "done" | "current" | "upcoming";
+
+export interface TimelineStep {
+  key: string;
+  label: string;
+  state: TimelineStepState;
+  at?: string;
+}
+
+export type NotificationChannel = "email" | "sms" | "whatsapp";
+
+export interface Notification {
+  id: string;
+  channel: NotificationChannel;
+  message: string;
+  sentAt: string;
+}
