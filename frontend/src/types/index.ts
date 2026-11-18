@@ -12,12 +12,6 @@ export interface Lead {
   name: string;
   email: string;
   phone: string;
-}
-
-export interface Review {
-  name: string;
-  city: string;
-  rating: number;
-  text: string;
-  date: string;
+  serviceSlug: string;
+  extra: Record<string, string>;
 }
