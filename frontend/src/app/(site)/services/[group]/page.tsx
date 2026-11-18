@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageHeader from "@/components/layout/PageHeader";
@@ -26,7 +27,22 @@ export async function generateMetadata({
   };
 }
 
-export default async function ServiceGroupPage({
+function ServiceGroupPageSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="bg-blue-tint">
+        <div className="mx-auto max-w-3xl space-y-3 px-4 py-12 text-center sm:px-6">
+          <div className="mx-auto h-8 w-1/2 rounded bg-muted" />
+          <div className="mx-auto h-4 w-2/3 rounded bg-muted" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Resolving params inside this async child (instead of the page body) keeps
+// the page shell statically prerenderable under Partial Prerendering.
+async function ServiceGroupPageContent({
   params,
 }: {
   params: Promise<{ group: string }>;
@@ -57,5 +73,17 @@ export default async function ServiceGroupPage({
         </div>
       </section>
     </>
+  );
+}
+
+export default function ServiceGroupPage({
+  params,
+}: {
+  params: Promise<{ group: string }>;
+}) {
+  return (
+    <Suspense fallback={<ServiceGroupPageSkeleton />}>
+      <ServiceGroupPageContent params={params} />
+    </Suspense>
   );
 }

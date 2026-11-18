@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import ServicePageTemplate from "@/components/service/ServicePageTemplate";
 import { services, serviceGroups, getService } from "@/data/service-catalog";
@@ -31,7 +32,24 @@ export async function generateMetadata({
   };
 }
 
-export default async function ServicePage({
+function ServicePageSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="bg-blue-tint">
+        <div className="mx-auto max-w-6xl space-y-4 px-4 py-14 sm:px-6 lg:py-20">
+          <div className="h-5 w-24 rounded-full bg-muted" />
+          <div className="h-9 w-2/3 rounded bg-muted" />
+          <div className="h-4 w-full max-w-md rounded bg-muted" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// The params promise is only resolved inside this async child so the page
+// shell above can prerender statically; Next flags `await params` used
+// directly in a page body as dynamic access outside Suspense otherwise.
+async function ServicePageContent({
   params,
 }: {
   params: Promise<{ service: string }>;
@@ -44,4 +62,16 @@ export default async function ServicePage({
   if (!group) notFound();
 
   return <ServicePageTemplate service={service} group={group} />;
+}
+
+export default function ServicePage({
+  params,
+}: {
+  params: Promise<{ service: string }>;
+}) {
+  return (
+    <Suspense fallback={<ServicePageSkeleton />}>
+      <ServicePageContent params={params} />
+    </Suspense>
+  );
 }
