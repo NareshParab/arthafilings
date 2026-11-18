@@ -1,3 +1,5 @@
+import { OrdersPage } from "@/components/admin/OrdersPage";
+
 export default function AdminOrdersPage() {
-  return <div>Admin Orders - placeholder</div>;
+  return <OrdersPage />;
 }
