@@ -1,0 +1,510 @@
+// MOCK: admin seed data, development only. In production these arrays are
+// empty — nobody can reach a real session (the mock login 404s in prod, see
+// app/admin/login/page.tsx), so there is nothing for an unauthenticated
+// crawler or build to show. Replace this whole file with real API calls in
+// the backend phase.
+import type { AdminLead, AdminOrder, AdminUser } from "@/types/admin";
+
+const isDev = process.env.NODE_ENV !== "production";
+
+// 4 original names — not pulled from any client or reference site.
+const adminUsersSeed: AdminUser[] = [
+  { id: "u-meera", name: "Meera Iyer", role: "admin" },
+  { id: "u-devika", name: "Devika Rao", role: "staff" },
+  { id: "u-arjun", name: "Arjun Nair", role: "staff" },
+  { id: "u-kabir", name: "Kabir Shah", role: "reviewer" },
+];
+
+export const ADMIN_USERS: AdminUser[] = adminUsersSeed;
+
+const adminLeadsSeed: AdminLead[] = [
+  {
+    id: "L001",
+    name: "Rohan Kulkarni",
+    phone: "9876540101",
+    email: "rohan.kulkarni@example.com",
+    serviceSlug: "proprietorship-registration",
+    status: "new",
+    assignedTo: null,
+    utmSource: "google",
+    utmCampaign: "search-proprietorship",
+    extra: {},
+    createdAt: "2026-11-18T08:10:00.000Z",
+    notes: [],
+    activityLog: [
+      { id: "L001-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-18T08:10:00.000Z" },
+    ],
+  },
+  {
+    id: "L002",
+    name: "Sneha Patil",
+    phone: "9876540102",
+    email: "sneha.patil@example.com",
+    serviceSlug: "llp-registration",
+    status: "contacted",
+    assignedTo: "u-devika",
+    utmSource: "facebook",
+    utmCampaign: "llp-awareness",
+    extra: { state: "Maharashtra" },
+    followUpDate: "2026-11-19",
+    createdAt: "2026-11-15T09:30:00.000Z",
+    notes: [
+      {
+        id: "L002-N1",
+        authorId: "u-devika",
+        authorName: "Devika Rao",
+        body: "Spoke on call, sending the document checklist by email.",
+        at: "2026-11-15T10:05:00.000Z",
+      },
+    ],
+    activityLog: [
+      { id: "L002-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-15T09:30:00.000Z" },
+      { id: "L002-A2", actorId: "u-devika", actorName: "Devika Rao", action: "Assigned to Devika Rao", at: "2026-11-15T09:45:00.000Z" },
+      { id: "L002-A3", actorId: "u-devika", actorName: "Devika Rao", action: "Status changed to Contacted", at: "2026-11-15T10:05:00.000Z" },
+    ],
+  },
+  {
+    id: "L003",
+    name: "Imran Sheikh",
+    phone: "9876540103",
+    email: "imran.sheikh@example.com",
+    serviceSlug: "private-limited-company-registration",
+    status: "follow_up",
+    assignedTo: "u-arjun",
+    utmSource: "google",
+    utmCampaign: "pvt-ltd-nov",
+    extra: { state: "Delhi" },
+    followUpDate: "2026-11-18",
+    createdAt: "2026-11-12T11:00:00.000Z",
+    notes: [
+      {
+        id: "L003-N1",
+        authorId: "u-arjun",
+        authorName: "Arjun Nair",
+        body: "Waiting on director KYC documents before we can proceed.",
+        at: "2026-11-14T13:20:00.000Z",
+      },
+    ],
+    activityLog: [
+      { id: "L003-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-12T11:00:00.000Z" },
+      { id: "L003-A2", actorId: "u-arjun", actorName: "Arjun Nair", action: "Status changed to Follow-up", at: "2026-11-14T13:20:00.000Z" },
+    ],
+  },
+  {
+    id: "L004",
+    name: "Fatima Noor",
+    phone: "9876540104",
+    email: "fatima.noor@example.com",
+    serviceSlug: "gst-registration",
+    status: "new",
+    assignedTo: null,
+    utmSource: "instagram",
+    utmCampaign: "gst-reels",
+    extra: {},
+    createdAt: "2026-11-18T06:45:00.000Z",
+    notes: [],
+    activityLog: [
+      { id: "L004-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-18T06:45:00.000Z" },
+    ],
+  },
+  {
+    id: "L005",
+    name: "Karthik Subramaniam",
+    phone: "9876540105",
+    email: "karthik.s@example.com",
+    serviceSlug: "trademark-registration",
+    status: "converted",
+    assignedTo: "u-devika",
+    utmSource: "google",
+    utmCampaign: "trademark-protect",
+    extra: { brandName: "Subbu Foods" },
+    createdAt: "2026-11-05T07:15:00.000Z",
+    notes: [
+      {
+        id: "L005-N1",
+        authorId: "u-devika",
+        authorName: "Devika Rao",
+        body: "Converted to order AF-2026-1005 after the class search call.",
+        at: "2026-11-08T12:00:00.000Z",
+      },
+    ],
+    activityLog: [
+      { id: "L005-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-05T07:15:00.000Z" },
+      { id: "L005-A2", actorId: "u-devika", actorName: "Devika Rao", action: "Status changed to Converted", at: "2026-11-08T12:00:00.000Z" },
+    ],
+  },
+  {
+    id: "L006",
+    name: "Ananya Desai",
+    phone: "9876540106",
+    email: "ananya.desai@example.com",
+    serviceSlug: "one-person-company",
+    status: "lost",
+    assignedTo: "u-arjun",
+    utmSource: "linkedin",
+    utmCampaign: "opc-startups",
+    extra: { state: "Karnataka" },
+    createdAt: "2026-11-02T10:00:00.000Z",
+    notes: [
+      {
+        id: "L006-N1",
+        authorId: "u-arjun",
+        authorName: "Arjun Nair",
+        body: "Went with a local CA instead — price sensitive.",
+        at: "2026-11-09T09:00:00.000Z",
+      },
+    ],
+    activityLog: [
+      { id: "L006-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-02T10:00:00.000Z" },
+      { id: "L006-A2", actorId: "u-arjun", actorName: "Arjun Nair", action: "Status changed to Lost", at: "2026-11-09T09:00:00.000Z" },
+    ],
+  },
+  {
+    id: "L007",
+    name: "Vikram Chawla",
+    phone: "9876540107",
+    email: "vikram.chawla@example.com",
+    serviceSlug: "income-tax-e-filing",
+    status: "new",
+    assignedTo: null,
+    utmSource: "google",
+    utmCampaign: "itr-season",
+    extra: {},
+    createdAt: "2026-11-17T15:20:00.000Z",
+    notes: [],
+    activityLog: [
+      { id: "L007-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-17T15:20:00.000Z" },
+    ],
+  },
+  {
+    id: "L008",
+    name: "Priya Menon",
+    phone: "9876540108",
+    email: "priya.menon@example.com",
+    serviceSlug: "udyam-registration",
+    status: "contacted",
+    assignedTo: "u-devika",
+    utmSource: "referral",
+    extra: {},
+    followUpDate: "2026-11-20",
+    createdAt: "2026-11-14T08:50:00.000Z",
+    notes: [],
+    activityLog: [
+      { id: "L008-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-14T08:50:00.000Z" },
+      { id: "L008-A2", actorId: "u-devika", actorName: "Devika Rao", action: "Assigned to Devika Rao", at: "2026-11-14T09:00:00.000Z" },
+    ],
+  },
+  {
+    id: "L009",
+    name: "Suresh Reddy",
+    phone: "9876540109",
+    email: "suresh.reddy@example.com",
+    serviceSlug: "fssai-registration",
+    status: "follow_up",
+    assignedTo: null,
+    utmSource: "google",
+    utmCampaign: "fssai-food",
+    extra: {},
+    followUpDate: "2026-11-18",
+    createdAt: "2026-11-13T12:40:00.000Z",
+    notes: [],
+    activityLog: [
+      { id: "L009-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-13T12:40:00.000Z" },
+    ],
+  },
+  {
+    id: "L010",
+    name: "Neha Joshi",
+    phone: "9876540110",
+    email: "neha.joshi@example.com",
+    serviceSlug: "copyright-registration",
+    status: "new",
+    assignedTo: "u-arjun",
+    utmSource: "instagram",
+    utmCampaign: "creator-ip",
+    extra: { brandName: "Neha Joshi Studio" },
+    createdAt: "2026-11-18T05:30:00.000Z",
+    notes: [],
+    activityLog: [
+      { id: "L010-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-18T05:30:00.000Z" },
+    ],
+  },
+  {
+    id: "L011",
+    name: "Aditya Verma",
+    phone: "9876540111",
+    email: "aditya.verma@example.com",
+    serviceSlug: "trust-registration",
+    status: "contacted",
+    assignedTo: null,
+    utmSource: "google",
+    utmCampaign: "ngo-setup",
+    extra: { state: "Uttar Pradesh" },
+    followUpDate: "2026-11-21",
+    createdAt: "2026-11-11T09:10:00.000Z",
+    notes: [],
+    activityLog: [
+      { id: "L011-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-11-11T09:10:00.000Z" },
+    ],
+  },
+  {
+    id: "L012",
+    name: "Zara Khan",
+    phone: "9876540112",
+    email: "zara.khan@example.com",
+    serviceSlug: "import-export-code",
+    status: "converted",
+    assignedTo: "u-devika",
+    utmSource: "google",
+    utmCampaign: "iec-export",
+    extra: {},
+    createdAt: "2026-10-30T14:00:00.000Z",
+    notes: [
+      {
+        id: "L012-N1",
+        authorId: "u-devika",
+        authorName: "Devika Rao",
+        body: "Converted to order AF-2026-1010.",
+        at: "2026-11-01T10:00:00.000Z",
+      },
+    ],
+    activityLog: [
+      { id: "L012-A1", actorId: "system", actorName: "System", action: "Lead captured from the enquiry form", at: "2026-10-30T14:00:00.000Z" },
+      { id: "L012-A2", actorId: "u-devika", actorName: "Devika Rao", action: "Status changed to Converted", at: "2026-11-01T10:00:00.000Z" },
+    ],
+  },
+];
+
+export const ADMIN_LEADS: AdminLead[] = isDev ? adminLeadsSeed : [];
+
+const adminOrdersSeed: AdminOrder[] = [
+  {
+    id: "AF-2026-1001",
+    orderNo: "AF-2026-1001",
+    serviceSlug: "proprietorship-registration",
+    customer: { name: "Rohit Sharma", email: "rohit.sharma@example.com", phone: "9876500002" },
+    amounts: { basePaise: 199900, discountPaise: 0, gstPaise: 35982, totalPaise: 235882 }, // MOCK price [TBD]
+    status: "placed",
+    paymentStatus: "paid",
+    assignedTo: null,
+    preparedBy: null,
+    documents: [],
+    deliveredDocuments: [],
+    internalNotes: [],
+    activityLog: [
+      { id: "AF1001-A1", actorId: "system", actorName: "System", action: "Order placed after payment", at: "2026-11-18T09:00:00.000Z" },
+    ],
+    createdAt: "2026-11-18T09:00:00.000Z",
+  },
+  {
+    id: "AF-2026-1002",
+    orderNo: "AF-2026-1002",
+    serviceSlug: "llp-registration",
+    customer: { name: "Sneha Patil", email: "sneha.patil@example.com", phone: "9876540102", billingState: "Maharashtra" },
+    amounts: { basePaise: 799900, discountPaise: 0, gstPaise: 143982, totalPaise: 943882 }, // MOCK price [TBD]
+    status: "documents_pending",
+    paymentStatus: "paid",
+    assignedTo: "u-devika",
+    preparedBy: null,
+    documents: [],
+    deliveredDocuments: [],
+    internalNotes: [
+      { id: "AF1002-N1", authorId: "u-devika", authorName: "Devika Rao", body: "Sent the document checklist over WhatsApp.", at: "2026-11-16T11:00:00.000Z" },
+    ],
+    activityLog: [
+      { id: "AF1002-A1", actorId: "system", actorName: "System", action: "Order placed after payment", at: "2026-11-15T10:00:00.000Z" },
+      { id: "AF1002-A2", actorId: "u-devika", actorName: "Devika Rao", action: "Assigned to Devika Rao", at: "2026-11-15T10:30:00.000Z" },
+    ],
+    createdAt: "2026-11-15T10:00:00.000Z",
+  },
+  {
+    id: "AF-2026-1003",
+    orderNo: "AF-2026-1003",
+    serviceSlug: "private-limited-company-registration",
+    customer: { name: "Imran Sheikh", email: "imran.sheikh@example.com", phone: "9876540103", billingState: "Delhi" },
+    amounts: { basePaise: 699900, discountPaise: 0, gstPaise: 125982, totalPaise: 825882 }, // MOCK price [TBD]
+    status: "documents_received",
+    paymentStatus: "paid",
+    assignedTo: "u-arjun",
+    preparedBy: null,
+    documents: [
+      { id: "AF1003-D1", label: "Director PAN", fileName: "director-pan.pdf", status: "uploaded", uploadedAt: "2026-11-13T09:00:00.000Z" },
+      { id: "AF1003-D2", label: "Director Aadhaar", fileName: "director-aadhaar.pdf", status: "uploaded", uploadedAt: "2026-11-13T09:05:00.000Z" },
+      { id: "AF1003-D3", label: "Registered office proof", fileName: "office-proof.pdf", status: "rejected", rejectReason: "Utility bill is older than 2 months — please upload a recent one.", uploadedAt: "2026-11-13T09:10:00.000Z" },
+    ],
+    deliveredDocuments: [],
+    internalNotes: [
+      { id: "AF1003-N1", authorId: "u-arjun", authorName: "Arjun Nair", body: "Asked for a fresh utility bill, waiting on the client.", at: "2026-11-14T10:00:00.000Z" },
+    ],
+    activityLog: [
+      { id: "AF1003-A1", actorId: "system", actorName: "System", action: "Order placed after payment", at: "2026-11-12T09:00:00.000Z" },
+      { id: "AF1003-A2", actorId: "u-arjun", actorName: "Arjun Nair", action: "Rejected document: Registered office proof", at: "2026-11-13T09:10:00.000Z" },
+    ],
+    createdAt: "2026-11-12T09:00:00.000Z",
+  },
+  {
+    id: "AF-2026-1004",
+    orderNo: "AF-2026-1004",
+    serviceSlug: "one-person-company",
+    customer: { name: "Ananya Desai", email: "ananya.desai@example.com", phone: "9876540106", billingState: "Karnataka" },
+    amounts: { basePaise: 499900, discountPaise: 0, gstPaise: 89982, totalPaise: 589882 },
+    status: "under_review",
+    paymentStatus: "paid",
+    assignedTo: "u-devika",
+    preparedBy: "u-devika",
+    documents: [
+      { id: "AF1004-D1", label: "Director PAN", fileName: "director-pan.pdf", status: "accepted", uploadedAt: "2026-11-09T09:00:00.000Z" },
+      { id: "AF1004-D2", label: "Director Aadhaar", fileName: "director-aadhaar.pdf", status: "accepted", uploadedAt: "2026-11-09T09:05:00.000Z" },
+    ],
+    deliveredDocuments: [],
+    internalNotes: [
+      { id: "AF1004-N1", authorId: "u-devika", authorName: "Devika Rao", body: "Filing prepared, sending for review.", at: "2026-11-10T12:00:00.000Z" },
+    ],
+    activityLog: [
+      { id: "AF1004-A1", actorId: "system", actorName: "System", action: "Order placed after payment", at: "2026-11-08T09:00:00.000Z" },
+      { id: "AF1004-A2", actorId: "u-devika", actorName: "Devika Rao", action: "Prepared filing and submitted for review", at: "2026-11-10T12:00:00.000Z" },
+    ],
+    createdAt: "2026-11-08T09:00:00.000Z",
+  },
+  {
+    // MOCK: preparedBy is intentionally the reviewer's own id, to demo the
+    // maker-checker lock — Kabir cannot approve a filing he prepared himself.
+    id: "AF-2026-1005",
+    orderNo: "AF-2026-1005",
+    serviceSlug: "trademark-registration",
+    customer: { name: "Karthik Subramaniam", email: "karthik.s@example.com", phone: "9876540105" },
+    amounts: { basePaise: 699900, discountPaise: 0, gstPaise: 125982, totalPaise: 825882 },
+    status: "under_review",
+    paymentStatus: "paid",
+    assignedTo: "u-devika",
+    preparedBy: "u-kabir",
+    documents: [
+      { id: "AF1005-D1", label: "Brand logo / wordmark", fileName: "subbu-foods-logo.png", status: "accepted", uploadedAt: "2026-11-06T09:00:00.000Z" },
+      { id: "AF1005-D2", label: "Applicant ID proof", fileName: "applicant-id.pdf", status: "accepted", uploadedAt: "2026-11-06T09:05:00.000Z" },
+    ],
+    deliveredDocuments: [],
+    internalNotes: [
+      { id: "AF1005-N1", authorId: "u-kabir", authorName: "Kabir Shah", body: "Filled in while covering for Arjun last week — needs a different reviewer now.", at: "2026-11-07T11:00:00.000Z" },
+    ],
+    activityLog: [
+      { id: "AF1005-A1", actorId: "system", actorName: "System", action: "Order placed after payment", at: "2026-11-05T09:00:00.000Z" },
+      { id: "AF1005-A2", actorId: "u-kabir", actorName: "Kabir Shah", action: "Prepared filing and submitted for review", at: "2026-11-07T11:00:00.000Z" },
+    ],
+    createdAt: "2026-11-05T09:00:00.000Z",
+  },
+  {
+    id: "AF-2026-1006",
+    orderNo: "AF-2026-1006",
+    serviceSlug: "gst-registration",
+    customer: { name: "Fatima Noor", email: "fatima.noor@example.com", phone: "9876540104" },
+    amounts: { basePaise: 149900, discountPaise: 0, gstPaise: 26982, totalPaise: 176882 },
+    status: "submitted",
+    paymentStatus: "paid",
+    assignedTo: "u-devika",
+    preparedBy: "u-devika",
+    documents: [
+      { id: "AF1006-D1", label: "PAN card", fileName: "pan.pdf", status: "accepted", uploadedAt: "2026-10-29T09:00:00.000Z" },
+      { id: "AF1006-D2", label: "Business address proof", fileName: "address-proof.pdf", status: "accepted", uploadedAt: "2026-10-29T09:05:00.000Z" },
+    ],
+    deliveredDocuments: [],
+    internalNotes: [],
+    activityLog: [
+      { id: "AF1006-A1", actorId: "system", actorName: "System", action: "Order placed after payment", at: "2026-10-28T09:00:00.000Z" },
+      { id: "AF1006-A2", actorId: "u-kabir", actorName: "Kabir Shah", action: "Approved filing", at: "2026-10-31T10:00:00.000Z" },
+    ],
+    createdAt: "2026-10-28T09:00:00.000Z",
+  },
+  {
+    id: "AF-2026-1007",
+    orderNo: "AF-2026-1007",
+    serviceSlug: "income-tax-e-filing",
+    customer: { name: "Vikram Chawla", email: "vikram.chawla@example.com", phone: "9876540107" },
+    amounts: { basePaise: 99900, discountPaise: 10000, gstPaise: 16182, totalPaise: 106082 },
+    status: "completed",
+    paymentStatus: "paid",
+    assignedTo: "u-arjun",
+    preparedBy: "u-arjun",
+    documents: [
+      { id: "AF1007-D1", label: "Form 16 / income proof", fileName: "form16.pdf", status: "accepted", uploadedAt: "2026-10-20T09:00:00.000Z" },
+    ],
+    deliveredDocuments: [
+      { id: "AF1007-DD1", label: "ITR acknowledgement", fileName: "itr-ack.pdf", issuedAt: "2026-10-24T12:00:00.000Z" },
+    ],
+    internalNotes: [],
+    activityLog: [
+      { id: "AF1007-A1", actorId: "system", actorName: "System", action: "Order placed after payment", at: "2026-10-18T09:00:00.000Z" },
+      { id: "AF1007-A2", actorId: "u-kabir", actorName: "Kabir Shah", action: "Approved filing", at: "2026-10-22T10:00:00.000Z" },
+      { id: "AF1007-A3", actorId: "u-arjun", actorName: "Arjun Nair", action: "Marked completed", at: "2026-10-24T12:00:00.000Z" },
+    ],
+    createdAt: "2026-10-18T09:00:00.000Z",
+  },
+  {
+    id: "AF-2026-1008",
+    orderNo: "AF-2026-1008",
+    serviceSlug: "udyam-registration",
+    customer: { name: "Priya Menon", email: "priya.menon@example.com", phone: "9876540108" },
+    amounts: { basePaise: 59900, discountPaise: 0, gstPaise: 10782, totalPaise: 70682 },
+    status: "documents_pending",
+    paymentStatus: "paid",
+    assignedTo: "u-devika",
+    preparedBy: null,
+    documents: [],
+    deliveredDocuments: [],
+    internalNotes: [],
+    activityLog: [
+      { id: "AF1008-A1", actorId: "system", actorName: "System", action: "Order placed after payment", at: "2026-11-17T14:00:00.000Z" },
+    ],
+    createdAt: "2026-11-17T14:00:00.000Z",
+  },
+  {
+    id: "AF-2026-1009",
+    orderNo: "AF-2026-1009",
+    serviceSlug: "fssai-registration",
+    customer: { name: "Suresh Reddy", email: "suresh.reddy@example.com", phone: "9876540109" },
+    amounts: { basePaise: 79900, discountPaise: 0, gstPaise: 14382, totalPaise: 94282 },
+    status: "placed",
+    paymentStatus: "pending",
+    assignedTo: null,
+    preparedBy: null,
+    documents: [],
+    deliveredDocuments: [],
+    internalNotes: [],
+    activityLog: [
+      { id: "AF1009-A1", actorId: "system", actorName: "System", action: "Order placed, payment pending confirmation", at: "2026-11-18T07:00:00.000Z" },
+    ],
+    createdAt: "2026-11-18T07:00:00.000Z",
+  },
+  {
+    id: "AF-2026-1010",
+    orderNo: "AF-2026-1010",
+    serviceSlug: "import-export-code",
+    customer: { name: "Zara Khan", email: "zara.khan@example.com", phone: "9876540112" },
+    amounts: { basePaise: 129900, discountPaise: 0, gstPaise: 23382, totalPaise: 153282 },
+    status: "completed",
+    paymentStatus: "paid",
+    assignedTo: "u-devika",
+    preparedBy: "u-devika",
+    documents: [
+      { id: "AF1010-D1", label: "PAN card", fileName: "zara-pan.pdf", status: "accepted", uploadedAt: "2026-11-01T09:00:00.000Z" },
+      { id: "AF1010-D2", label: "Bank certificate", fileName: "bank-cert.pdf", status: "accepted", uploadedAt: "2026-11-01T09:05:00.000Z" },
+    ],
+    deliveredDocuments: [
+      { id: "AF1010-DD1", label: "IEC certificate", fileName: "iec-certificate.pdf", issuedAt: "2026-11-04T12:00:00.000Z" },
+    ],
+    internalNotes: [],
+    activityLog: [
+      { id: "AF1010-A1", actorId: "system", actorName: "System", action: "Order placed after payment", at: "2026-10-30T15:00:00.000Z" },
+      { id: "AF1010-A2", actorId: "u-kabir", actorName: "Kabir Shah", action: "Approved filing", at: "2026-11-02T10:00:00.000Z" },
+      { id: "AF1010-A3", actorId: "u-devika", actorName: "Devika Rao", action: "Marked completed", at: "2026-11-04T12:00:00.000Z" },
+    ],
+    createdAt: "2026-10-30T15:00:00.000Z",
+  },
+];
+
+export const ADMIN_ORDERS: AdminOrder[] = isDev ? adminOrdersSeed : [];
+
+// Reference "today" for the dashboard demo — the latest activity timestamp
+// in the seed data, rather than the real wall-clock date. Keeps "today" /
+// "due today" KPIs meaningful no matter when this is viewed, without having
+// to keep rewriting fixed seed dates.
+export const MOCK_TODAY = "2026-11-18";
