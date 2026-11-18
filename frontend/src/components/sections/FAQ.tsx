@@ -4,25 +4,25 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { faqs } from "@/data/faqs";
+import type { FAQItem } from "@/data/service-content";
 
-// [VERIFY] FAQPage structured data is generated from data/faqs.ts. These answers
-// must be legally checked before this goes live, since search engines may surface
-// them directly.
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: faqs.map((faq) => ({
-    "@type": "Question",
-    name: faq.question,
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: faq.answer,
-    },
-  })),
-};
+// [VERIFY] FAQPage structured data is generated from the service's FAQ content.
+// These answers must be legally checked before this goes live, since search
+// engines may surface them directly.
+export default function FAQ({ faqs }: { faqs: FAQItem[] }) {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
 
-export default function FAQ() {
   return (
     <section className="bg-cream">
       <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
