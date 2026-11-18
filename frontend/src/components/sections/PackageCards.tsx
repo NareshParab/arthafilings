@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { proprietorshipPackages } from "@/data/packages";
+import type { Package } from "@/types";
 
-export default function PackageCards() {
+export default function PackageCards({ packages }: { packages: Package[] }) {
   return (
     <section id="packages" className="bg-cream">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
@@ -21,7 +21,7 @@ export default function PackageCards() {
         </div>
 
         <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {proprietorshipPackages.map((pkg) => (
+          {packages.map((pkg) => (
             <Card
               key={pkg.id}
               className={cn(

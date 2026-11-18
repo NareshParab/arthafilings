@@ -9,19 +9,11 @@ export const siteConfig = {
   email: "contact@arthafilings.com", // [VERIFY]
 
   headerNav: [
-    { label: "Home", href: "/" },
-    { label: "Proprietorship Registration", href: "/proprietorship-registration" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ],
 
   footer: {
-    services: [
-      { label: "Proprietorship Registration", href: "/proprietorship-registration", comingSoon: false },
-      { label: "GST Registration", href: "#", comingSoon: true },
-      { label: "Trademark Registration", href: "#", comingSoon: true },
-      { label: "Company Registration", href: "#", comingSoon: true },
-    ],
     company: [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },

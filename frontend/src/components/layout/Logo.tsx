@@ -24,10 +24,10 @@ export default function Logo({ className }: { className?: string }) {
   return (
     <Link
       href="/"
-      className={cn("inline-flex items-center gap-2 font-semibold text-navy", className)}
+      className={cn("inline-flex items-center gap-2 font-bold text-navy", className)}
     >
       <LogoMark className="size-8" />
-      <span className="text-lg tracking-tight text-current">{siteConfig.name}</span>
+      <span className="text-xl tracking-tight text-current">{siteConfig.name}</span>
     </Link>
   );
 }

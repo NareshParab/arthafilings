@@ -24,3 +24,7 @@ Never commit `.env` files, keys, tokens, or passwords. Only `.env.example` is tr
 ## Styling
 
 The brand palette lives in `frontend/src/app/globals.css`. Do not hardcode colours — use the CSS variables / Tailwind theme tokens.
+
+## Services
+
+All services come from `data/service-catalog.ts`. One service page template and one lead form. New service = new catalog entry plus optional content entry.

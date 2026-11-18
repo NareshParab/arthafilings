@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/layout/Logo";
 import { siteConfig } from "@/lib/site-config";
+import { serviceGroups } from "@/data/service-catalog";
 
 function FooterColumn({
   title,
@@ -38,24 +38,21 @@ export default async function Footer() {
           </div>
 
           <FooterColumn title="Services">
-            {siteConfig.footer.services.map((item) => (
-              <li key={item.label} className="flex flex-col items-start gap-1">
+            {serviceGroups.map((group) => (
+              <li key={group.slug}>
                 <Link
-                  href={item.href}
+                  href={`/services/${group.slug}`}
                   className="text-sm text-blue-tint/80 hover:text-white"
                 >
-                  {item.label}
+                  {group.name}
                 </Link>
-                {item.comingSoon && (
-                  <Badge
-                    variant="outline"
-                    className="h-4 whitespace-nowrap border-blue-tint/40 px-1.5 text-[10px] text-blue-tint/70"
-                  >
-                    Coming soon
-                  </Badge>
-                )}
               </li>
             ))}
+            <li>
+              <Link href="/services" className="text-sm font-medium text-blue-tint hover:text-white">
+                View all services
+              </Link>
+            </li>
           </FooterColumn>
 
           <FooterColumn title="Company">
