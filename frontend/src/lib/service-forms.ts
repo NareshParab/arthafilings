@@ -72,8 +72,8 @@ export const extraFieldConfigs: Record<ExtraField, ExtraFieldConfig> = {
 };
 
 // 2 state digits + 10-char PAN + 1 entity code + fixed "Z" + 1 checksum = 15 chars.
-const GSTIN_REGEX = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
-const PAN_REGEX = /^[A-Z]{5}\d{4}[A-Z]$/;
+export const GSTIN_REGEX = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+export const PAN_REGEX = /^[A-Z]{5}\d{4}[A-Z]$/;
 
 function zodForField(field: ExtraField): z.ZodTypeAny {
   const config = extraFieldConfigs[field];
