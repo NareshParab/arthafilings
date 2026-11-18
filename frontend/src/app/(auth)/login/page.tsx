@@ -1,3 +1,15 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import LoginFlow from "@/components/auth/LoginFlow";
+
+export const metadata: Metadata = {
+  title: "Login",
+};
+
 export default function LoginPage() {
-  return <div>Login - placeholder</div>;
+  return (
+    <Suspense fallback={null}>
+      <LoginFlow />
+    </Suspense>
+  );
 }
