@@ -80,3 +80,16 @@ export function canMarkCompleted(session: AdminSession, order: AdminOrder): bool
   if (session.role === "staff") return canAccessOrder(session, order);
   return false;
 }
+
+// Services/prices, coupons, staff and the activity log are admin-only. Staff
+// and reviewers get the friendly "no access" page if they reach the URL
+// directly — this is a UI convenience only, the real backend must re-check
+// every one of these server-side before it ever returns the data.
+export function isAdminOnlySection(session: AdminSession): boolean {
+  return session.role === "admin";
+}
+
+export const canManageCatalog = isAdminOnlySection;
+export const canManageCoupons = isAdminOnlySection;
+export const canManageStaff = isAdminOnlySection;
+export const canViewActivityLog = isAdminOnlySection;
