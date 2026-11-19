@@ -4,7 +4,7 @@ export const siteConfig = {
   description:
     "Arthafilings helps you register and manage your business filings online, with clear pricing and dedicated support.",
   phone: "+91 00000 00000", // [VERIFY]
-  whatsappNumber: "+91 00000 00000", // [VERIFY]
+  whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+91 00000 00000", // [VERIFY]
   whatsappMessage: "Hi Arthafilings, I'd like to know more about your services.",
   email: "contact@arthafilings.com", // [VERIFY]
 
