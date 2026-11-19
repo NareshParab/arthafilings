@@ -86,7 +86,10 @@ function buildPriceChipText(packages: AdminServicePackage[], mode: ServiceItem["
   return `From ₹${Math.round(cheapest / 100).toLocaleString("en-IN")}`;
 }
 
-function buildDefaultContent(service: ServiceItem): AdminServiceContent {
+// Exported unconditionally (unlike getDefaultAdminServiceContent below) so
+// launch-readiness tooling can inspect real seed content in any environment,
+// not just dev.
+export function buildDefaultContent(service: ServiceItem): AdminServiceContent {
   const group = serviceGroups.find((g) => g.slug === service.group)!;
   const content = getServiceContent(service, group);
   const packages = buildPackages(service, group);
@@ -110,7 +113,7 @@ function buildDefaultContent(service: ServiceItem): AdminServiceContent {
     faqs: buildFaqs(service, group),
     seoTitle: `${service.name} | Arthafilings`, // [VERIFY]
     seoDescription: content.intro, // [VERIFY]
-    legalReviewedBy: isSeedReady ? "Priya Sharma, CS" : "", // [VERIFY] with client
+    legalReviewedBy: isSeedReady ? "[TBD: legal reviewer]" : "",
     legalReviewDate: isSeedReady ? "2026-11-10" : "",
     lastEditedAt: null,
     lastEditedBy: null,

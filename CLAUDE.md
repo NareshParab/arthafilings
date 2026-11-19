@@ -20,6 +20,7 @@ Never commit `.env` files, keys, tokens, or passwords. Only `.env.example` is tr
 - Work on a branch per task (e.g. `feat/proprietorship-hero`).
 - At the end of each task: run `npm run lint` and `npm run build`, commit, and `git push -u origin <branch>`.
 - Do not push directly to `main` unless explicitly told to.
+- Before opening a pull request, run /code-review on your own diff and fix every confirmed finding. Report what it found.
 
 ## Styling
 
