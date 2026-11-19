@@ -65,7 +65,7 @@ export function canReview(session: AdminSession, order: AdminOrder): { allowed: 
     return { allowed: false, reason: "Only a reviewer can approve or send back a filing." };
   }
   if (order.preparedBy && order.preparedBy === session.userId) {
-    return { allowed: false, reason: "You prepared this filing — a different reviewer must approve it." };
+    return { allowed: false, reason: "A different reviewer must approve this filing" };
   }
   return { allowed: true };
 }
