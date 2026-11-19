@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Script from "next/script";
-import { usePathname } from "next/navigation";
 import { GA_ID, analyticsEnabled, captureUtmParams, getSavedUtmParams, track } from "@/lib/analytics";
 
 function deriveServiceSlug(pathname: string): string | null {
@@ -12,9 +11,12 @@ function deriveServiceSlug(pathname: string): string | null {
   return knownNonServiceSegments.includes(segment) ? null : segment;
 }
 
+// Reads window.location at event time rather than subscribing to
+// usePathname() — usePathname() is a dynamic client hook that, used here at
+// the root layout, forces every page to opt out of static prerendering
+// under this project's cacheComponents config (next.config.ts). Reading the
+// path lazily from the DOM avoids that without losing per-click accuracy.
 export default function Analytics() {
-  const pathname = usePathname();
-
   useEffect(() => {
     captureUtmParams();
   }, []);
@@ -26,7 +28,7 @@ export default function Analytics() {
       const eventName = target.dataset.track;
       if (!eventName) return;
       track(eventName, {
-        serviceSlug: deriveServiceSlug(pathname),
+        serviceSlug: deriveServiceSlug(window.location.pathname),
         ...getSavedUtmParams(),
       });
     }
@@ -37,7 +39,7 @@ export default function Analytics() {
       document.removeEventListener("click", handleTrackedInteraction);
       document.removeEventListener("submit", handleTrackedInteraction);
     };
-  }, [pathname]);
+  }, []);
 
   if (!analyticsEnabled) return null;
 
