@@ -32,20 +32,15 @@ function InviteDialog({
   onOpenChange: (open: boolean) => void;
   actor: { id: string; name: string; role: AdminRole };
 }) {
+  // The parent remounts this component (via a `key` keyed to each open) any
+  // time the dialog is opened, so these are enough to seed a fresh form —
+  // no effect-based reset needed, and no reliance on the Dialog's own
+  // onOpenChange, which only fires for its own internal transitions
+  // (Escape, outside click), not when `open` is flipped by the parent.
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<AdminRole>("staff");
   const [submitted, setSubmitted] = useState(false);
-
-  function handleOpenChange(next: boolean) {
-    if (next) {
-      setName("");
-      setEmail("");
-      setRole("staff");
-      setSubmitted(false);
-    }
-    onOpenChange(next);
-  }
 
   const errors: string[] = [];
   if (!name.trim()) errors.push("Name is required.");
@@ -61,7 +56,7 @@ function InviteDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Invite staff</DialogTitle>
@@ -114,6 +109,9 @@ export function StaffPage() {
   const session = useAdminSession();
   const staff = useAdminStaff();
   const [inviteOpen, setInviteOpen] = useState(false);
+  // Bumped every time the dialog is opened, so it remounts with a blank
+  // form instead of showing whatever an earlier open/cancel left behind.
+  const [inviteDialogKey, setInviteDialogKey] = useState(0);
   const [confirmTarget, setConfirmTarget] = useState<StaffMember | null>(null);
 
   if (!session) return null;
@@ -177,7 +175,12 @@ export function StaffPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <Button onClick={() => setInviteOpen(true)}>
+        <Button
+          onClick={() => {
+            setInviteDialogKey((k) => k + 1);
+            setInviteOpen(true);
+          }}
+        >
           <Plus className="size-4" /> Invite staff
         </Button>
       </div>
@@ -200,7 +203,7 @@ export function StaffPage() {
         </CardContent>
       </Card>
 
-      <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} actor={actor} />
+      <InviteDialog key={inviteDialogKey} open={inviteOpen} onOpenChange={setInviteOpen} actor={actor} />
 
       <ConfirmDialog
         open={Boolean(confirmTarget)}

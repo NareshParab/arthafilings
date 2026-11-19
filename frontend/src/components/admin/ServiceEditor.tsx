@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowUp, ArrowDown, Plus, Trash2, ExternalLink, Check, X } from "lucide-react";
@@ -90,18 +90,38 @@ export function ServiceEditor({ slug }: { slug: string }) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [dirty]);
 
+  // A duplicate same-URL history entry is the guard: a Back press lands on
+  // it first (triggering the confirm below) instead of immediately leaving.
+  // It must be collapsed again once it's done its job — either by actually
+  // leaving (confirmed) or by the edit becoming clean (saved) — or it's left
+  // dangling and the next real Back press becomes a no-op.
+  const guardPushedRef = useRef(false);
+
   useEffect(() => {
-    if (!dirty) return;
-    window.history.pushState(null, "", window.location.href);
-    function handlePopState() {
-      if (!dirty || window.confirm("You have unsaved changes. Leave this page without saving?")) {
-        return;
+    if (dirty) {
+      if (!guardPushedRef.current) {
+        window.history.pushState(null, "", window.location.href);
+        guardPushedRef.current = true;
       }
-      window.history.pushState(null, "", window.location.href);
+    } else if (guardPushedRef.current) {
+      guardPushedRef.current = false;
+      window.history.back();
+    }
+  }, [dirty]);
+
+  useEffect(() => {
+    function handlePopState() {
+      if (!guardPushedRef.current) return;
+      if (window.confirm("You have unsaved changes. Leave this page without saving?")) {
+        guardPushedRef.current = false;
+        window.history.back();
+      } else {
+        window.history.pushState(null, "", window.location.href);
+      }
     }
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [dirty]);
+  }, []);
 
   function confirmNavigate(href: string) {
     if (dirty && !window.confirm("You have unsaved changes. Leave this page without saving?")) {
@@ -124,6 +144,18 @@ export function ServiceEditor({ slug }: { slug: string }) {
 
   function handleSave() {
     if (!content || !service) return;
+    // Mode/status are only validated at the moment those dropdowns change —
+    // a later edit (e.g. zeroing out the one priced package) can leave the
+    // draft in a state that no longer satisfies the rule it was set under,
+    // so re-check both before persisting rather than trusting the stale pass.
+    if (content.contentStatus === "ready" && !canMarkContentReady(content).ok) {
+      toast.error(`Can't save as Ready: ${canMarkContentReady(content).reasons.join(" ")}`);
+      return;
+    }
+    if (content.mode === "live" && !canGoLive(content).ok) {
+      toast.error(`Can't save as Live: ${canGoLive(content).reasons.join(" ")}`);
+      return;
+    }
     const actor = { id: session!.userId, name: session!.name, role: session!.role };
     const next = saveServiceContent(slug, content, actor, service.name);
     setContent(next);

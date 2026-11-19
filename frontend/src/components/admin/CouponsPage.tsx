@@ -113,18 +113,15 @@ function CouponDialog({
   coupon: AdminCoupon | null;
   actor: { id: string; name: string; role: "admin" | "staff" | "reviewer" };
 }) {
+  // The parent remounts this component (via a `key` keyed to each open) any
+  // time the dialog is opened, so these lazy initializers are enough to
+  // seed a fresh form per coupon — no effect-based reset needed, and no
+  // reliance on the Dialog's own onOpenChange, which only fires for its own
+  // internal transitions (Escape, outside click), not when `open` is
+  // flipped by the parent.
   const [draft, setDraft] = useState<CouponDraft>(() => draftFromCoupon(coupon));
   const [serviceSearch, setServiceSearch] = useState("");
   const [submitted, setSubmitted] = useState(false);
-
-  function handleOpenChange(next: boolean) {
-    if (next) {
-      setDraft(draftFromCoupon(coupon));
-      setSubmitted(false);
-      setServiceSearch("");
-    }
-    onOpenChange(next);
-  }
 
   const errors = validateDraft(draft, coupon?.id);
   const visibleServices = services.filter((s) => s.name.toLowerCase().includes(serviceSearch.trim().toLowerCase()));
@@ -156,7 +153,7 @@ function CouponDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{coupon ? "Edit coupon" : "Create coupon"}</DialogTitle>
@@ -304,6 +301,9 @@ export function CouponsPage() {
   const coupons = useAdminCoupons();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<AdminCoupon | null>(null);
+  // Bumped every time the dialog is opened, so it remounts with a fresh
+  // form instead of showing whatever an earlier open/cancel left behind.
+  const [dialogKey, setDialogKey] = useState(0);
   const [confirmTarget, setConfirmTarget] = useState<AdminCoupon | null>(null);
 
   const sorted = useMemo(() => [...coupons].sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [coupons]);
@@ -345,6 +345,7 @@ export function CouponsPage() {
             size="sm"
             onClick={() => {
               setEditingCoupon(c);
+              setDialogKey((k) => k + 1);
               setDialogOpen(true);
             }}
           >
@@ -364,6 +365,7 @@ export function CouponsPage() {
         <Button
           onClick={() => {
             setEditingCoupon(null);
+            setDialogKey((k) => k + 1);
             setDialogOpen(true);
           }}
         >
@@ -380,7 +382,7 @@ export function CouponsPage() {
         emptyMessage="No coupons yet."
       />
 
-      <CouponDialog open={dialogOpen} onOpenChange={setDialogOpen} coupon={editingCoupon} actor={actor} />
+      <CouponDialog key={dialogKey} open={dialogOpen} onOpenChange={setDialogOpen} coupon={editingCoupon} actor={actor} />
 
       <ConfirmDialog
         open={Boolean(confirmTarget)}

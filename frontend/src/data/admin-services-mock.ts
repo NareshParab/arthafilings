@@ -119,13 +119,20 @@ function buildDefaultContent(service: ServiceItem): AdminServiceContent {
 
 const isDev = process.env.NODE_ENV !== "production";
 
+// A stable empty reference for production (same shape as the other mock
+// stores' empty seeds, e.g. ADMIN_COUPONS/ADMIN_STAFF) — useAdminServiceContentMap's
+// useSyncExternalStore passes this as getServerSnapshot, which must return
+// the same reference when nothing changed or React treats every render as
+// a change.
+const EMPTY: Record<string, AdminServiceContent> = {};
+
 // Keep this cheap: build once, lazily, rather than at module-eval time for
 // every import — 116 services isn't huge, but there's no reason to pay for
 // it in environments that never touch the admin panel.
 let cached: Record<string, AdminServiceContent> | null = null;
 
 export function getDefaultAdminServiceContent(): Record<string, AdminServiceContent> {
-  if (!isDev) return {};
+  if (!isDev) return EMPTY;
   if (cached) return cached;
   cached = Object.fromEntries(services.map((service) => [service.slug, buildDefaultContent(service)]));
   return cached;
