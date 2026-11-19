@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ServiceEditor } from "@/components/admin/ServiceEditor";
+
+export const metadata: Metadata = { title: "Service editor" };
 
 function ServiceEditorSkeleton() {
   return (

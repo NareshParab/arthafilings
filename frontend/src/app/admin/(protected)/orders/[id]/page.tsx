@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { OrderDetailPage } from "@/components/admin/OrderDetailPage";
+
+export const metadata: Metadata = { title: "Order detail" };
 
 function OrderDetailSkeleton() {
   return (
