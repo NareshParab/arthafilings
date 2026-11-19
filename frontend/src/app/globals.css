@@ -65,7 +65,7 @@
   --card: #ffffff;
   --card-foreground: var(--foreground);
   --cream: #fbf6ea;
-  --gold: #b7892f;
+  --gold: #926e26; /* darkened from #b7892f — white-on-gold was 3.17:1, below WCAG AA; same hue, now 4.69:1 */
   --muted-foreground: #5b6678;
   --border: #dce3ee;
   --input: var(--border);
