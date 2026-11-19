@@ -28,13 +28,10 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ro
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "staff", "reviewer"] },
   { href: "/admin/leads", label: "Leads", icon: Users, roles: ["admin", "staff"] },
   { href: "/admin/orders", label: "Orders", icon: Package, roles: ["admin", "staff", "reviewer"] },
-];
-
-const PLACEHOLDER_ITEMS = [
-  { label: "Services and prices", icon: Tags },
-  { label: "Coupons", icon: Ticket },
-  { label: "Staff", icon: UserCog },
-  { label: "Activity log", icon: History },
+  { href: "/admin/services", label: "Services and prices", icon: Tags, roles: ["admin"] },
+  { href: "/admin/coupons", label: "Coupons", icon: Ticket, roles: ["admin"] },
+  { href: "/admin/staff", label: "Staff", icon: UserCog, roles: ["admin"] },
+  { href: "/admin/activity", label: "Activity log", icon: History, roles: ["admin"] },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -43,9 +40,10 @@ function isActive(pathname: string, href: string) {
 }
 
 function getPageTitle(pathname: string) {
+  if (pathname.startsWith("/admin/orders/")) return "Order detail";
+  if (pathname.startsWith("/admin/services/")) return "Service editor";
   const match = NAV_ITEMS.find((item) => isActive(pathname, item.href));
   if (match) return match.label;
-  if (pathname.startsWith("/admin/orders/")) return "Order detail";
   return "Admin";
 }
 
@@ -69,21 +67,6 @@ function NavLinks({ role, pathname, onNavigate }: { role: AdminRole; pathname: s
             <Icon className="size-4" aria-hidden="true" />
             {item.label}
           </Link>
-        );
-      })}
-
-      <p className="px-3 pt-4 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">Coming up</p>
-      {PLACEHOLDER_ITEMS.map((item) => {
-        const Icon = item.icon;
-        return (
-          <span
-            key={item.label}
-            title="Coming in next step"
-            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground/60"
-          >
-            <Icon className="size-4" aria-hidden="true" />
-            {item.label}
-          </span>
         );
       })}
     </nav>
