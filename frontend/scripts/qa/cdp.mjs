@@ -152,6 +152,16 @@ export async function closeTab(cdpPort, targetId, session) {
   }
 }
 
+// Poll a flag getter until it's true or timeoutMs elapses — shared by every
+// call site that waits on an event-driven boolean (an event handler flips
+// it, this just bounds how long we wait for that to happen).
+export async function waitUntil(getFlag, { timeoutMs = 20000, intervalMs = 50 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  while (!getFlag() && Date.now() < deadline) {
+    await delay(intervalMs);
+  }
+}
+
 // Navigate and wait for the Page.loadEventFired event (bounded) — resolves
 // even if the event never fires, after timeoutMs, so one hung page never
 // blocks the whole sweep.
@@ -163,10 +173,7 @@ export async function navigate(session, url, { timeoutMs = 20000 } = {}) {
   session.on("Page.loadEventFired", handler);
   try {
     await session.send("Page.navigate", { url });
-    const deadline = Date.now() + timeoutMs;
-    while (!settled && Date.now() < deadline) {
-      await delay(50);
-    }
+    await waitUntil(() => settled, { timeoutMs, intervalMs: 50 });
   } finally {
     // Always remove this call's listener — on 100+ navigations in one
     // session, a dangling listener from a call that hit its timeout would

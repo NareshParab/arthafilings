@@ -4,7 +4,7 @@
 // broader route sample, then LCP/CLS on 5 representative pages under
 // simulated CPU + Fast-4G throttling.
 import { setTimeout as delay } from "node:timers/promises";
-import { launchChrome, openTab, closeTab, navigate, evaluate, withTimeout } from "./cdp.mjs";
+import { launchChrome, openTab, closeTab, navigate, evaluate, withTimeout, waitUntil } from "./cdp.mjs";
 import { startProdServer, QA_BASE_URL } from "./server.mjs";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -103,10 +103,7 @@ async function measureLcpViaTracing(session, url, { settleMs = 3000 } = {}) {
     await navigate(session, url, { timeoutMs: 30000 });
     await delay(settleMs);
     await session.send("Tracing.end");
-    const deadline = Date.now() + 10000;
-    while (!tracingDone && Date.now() < deadline) {
-      await delay(100);
-    }
+    await waitUntil(() => tracingDone, { timeoutMs: 10000, intervalMs: 100 });
   } finally {
     session.off("Tracing.tracingComplete", doneHandler);
   }
@@ -134,9 +131,14 @@ async function measureVitals(cdpPort, baseUrl) {
       await session.send("Emulation.setDeviceMetricsOverride", { width: 375, height: 800, deviceScaleFactor: 2, mobile: true });
 
       const start = Date.now();
+      // Budget comfortably above measureLcpViaTracing's own worst case
+      // (navigate's 30000ms + 3000ms settle + 10000ms tracing-complete poll)
+      // — a tighter outer timeout here would abandon the result while the
+      // inner call keeps running, leaking a pending CDP command against a
+      // tab this loop closes moments later.
       const lcpMs = await withTimeout(
         measureLcpViaTracing(session, `${baseUrl}${route.path}`),
-        20000,
+        50000,
         `lcp trace ${route.path}`
       );
       const wallClockMs = Date.now() - start;
