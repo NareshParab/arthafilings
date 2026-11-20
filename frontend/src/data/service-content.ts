@@ -26,7 +26,12 @@ export interface ServiceContent {
   documentsNeeded: DocumentGroup[];
   faqs: FAQItem[];
   packages?: Package[];
-  isDraft?: boolean; // true = generic fallback content, shows a DRAFT banner in development
+  // "draft" = not reviewed for public launch — production shows a minimal
+  // page instead of this content. Only "ready" with a real legalReviewedBy
+  // and legalReviewDate may show the full page in production.
+  contentStatus: "draft" | "ready";
+  legalReviewedBy?: string;
+  legalReviewDate?: string;
 }
 
 // Shared across every service page — the same 5-step flow we use everywhere.
@@ -197,12 +202,15 @@ export const serviceContent: Record<string, ServiceContent> = {
       },
     ],
     packages: proprietorshipPackages,
+    // Not yet legally reviewed — keep as "draft" until a real reviewer name
+    // and date are confirmed, even though this is our most complete content.
+    contentStatus: "draft",
   },
 };
 
 function buildGenericContent(service: ServiceItem, group: ServiceGroup): ServiceContent {
   return {
-    isDraft: true,
+    contentStatus: "draft",
     intro: `${service.name} support from Arthafilings, as part of our ${group.name} services. [TBD]`,
     whatYouGet: [
       "Guidance on what this service involves for your business. [TBD]",

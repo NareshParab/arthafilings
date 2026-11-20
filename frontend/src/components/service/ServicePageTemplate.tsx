@@ -27,7 +27,7 @@ export default function ServicePageTemplate({
 
   return (
     <>
-      {content.isDraft && process.env.NODE_ENV !== "production" && (
+      {content.contentStatus === "draft" && process.env.NODE_ENV !== "production" && (
         <div className="bg-destructive px-4 py-2 text-center text-xs font-semibold tracking-wide text-white">
           DRAFT CONTENT — generic placeholder text for this service, not reviewed. [VERIFY] [TBD]
         </div>
