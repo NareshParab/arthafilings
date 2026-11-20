@@ -228,8 +228,9 @@ export default function CheckoutFlow({
                   control={control}
                   name="wantsGstInvoice"
                   render={({ field }) => (
-                    <label className="flex items-start gap-2 text-sm text-foreground">
+                    <div className="flex items-start gap-2 text-sm text-foreground">
                       <Checkbox
+                        id="gst-invoice"
                         checked={field.value}
                         onCheckedChange={(checked) => {
                           const value = checked === true;
@@ -237,8 +238,10 @@ export default function CheckoutFlow({
                           setWantsGstInvoice(value);
                         }}
                       />
-                      I need a GST invoice
-                    </label>
+                      <Label htmlFor="gst-invoice" className="font-normal">
+                        I need a GST invoice
+                      </Label>
+                    </div>
                   )}
                 />
 

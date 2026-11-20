@@ -278,13 +278,16 @@ function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
             name="consent"
             render={({ field }) => (
               <div className="space-y-1.5">
-                <label className="flex items-start gap-2 text-sm text-foreground">
+                <div className="flex items-start gap-2 text-sm text-foreground">
                   <Checkbox
+                    id="consent"
                     checked={field.value}
                     onCheckedChange={(checked) => field.onChange(checked === true)}
                   />
-                  I agree to be contacted about my enquiry.
-                </label>
+                  <Label htmlFor="consent" className="font-normal">
+                    I agree to be contacted about my enquiry.
+                  </Label>
+                </div>
                 {errors.consent && (
                   <p className="text-sm text-destructive">{errors.consent.message as string}</p>
                 )}
