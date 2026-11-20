@@ -5,6 +5,7 @@ import ServicePageTemplate from "@/components/service/ServicePageTemplate";
 import { services, serviceGroups, getService } from "@/data/service-catalog";
 import { getServiceContent } from "@/data/service-content";
 import { assertNoReservedSlugCollisions } from "@/lib/reserved-routes";
+import { getSiteEnv } from "@/lib/site-env";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arthafilings.com";
 
@@ -24,6 +25,16 @@ export async function generateMetadata({
 
   const group = serviceGroups.find((item) => item.slug === service.group);
   const content = getServiceContent(service, group ?? serviceGroups[0]);
+  const isDraftInProduction = content.contentStatus === "draft" && getSiteEnv() === "production";
+
+  if (isDraftInProduction) {
+    return {
+      title: service.name,
+      description: `Get help with ${service.name} from Arthafilings — share your details and our team will get in touch.`,
+      alternates: { canonical: `${siteUrl}/${service.slug}` },
+      robots: { index: false, follow: false },
+    };
+  }
 
   return {
     title: service.name,
