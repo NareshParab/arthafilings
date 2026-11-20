@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { mockVerifyOtp } from "@/lib/mock-api";
 import { saveAuthSession } from "@/lib/mock-session";
+import { getSafeNextPath } from "@/lib/safe-redirect";
 
 const RESEND_SECONDS = 30;
 const MAX_WRONG_ATTEMPTS = 5;
@@ -26,7 +27,7 @@ type PhoneValues = z.infer<typeof phoneSchema>;
 export default function LoginFlow() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/dashboard";
+  const next = getSafeNextPath(searchParams.get("next"), "/dashboard");
 
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { signInAs } from "@/lib/admin-session";
+import { getSafeNextPath } from "@/lib/safe-redirect";
 import type { AdminRole } from "@/types/admin";
 import { ADMIN_USERS } from "@/data/admin-mock";
 
@@ -17,7 +18,7 @@ const ROLE_OPTIONS: { role: AdminRole; label: string }[] = [
 function LoginButtons() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/admin";
+  const next = getSafeNextPath(searchParams.get("next"), "/admin");
 
   function handleSignIn(role: AdminRole) {
     signInAs(role);
