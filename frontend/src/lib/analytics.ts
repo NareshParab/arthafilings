@@ -18,6 +18,9 @@ const UTM_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm
 // that brought the visitor in.
 export function captureUtmParams(): void {
   if (typeof window === "undefined") return;
+  // First-touch: once a UTM set is saved for this session, later visits
+  // (even with different UTM params) must not overwrite it.
+  if (window.sessionStorage.getItem(UTM_STORAGE_KEY)) return;
   const params = new URLSearchParams(window.location.search);
   const found: Record<string, string> = {};
   for (const key of UTM_PARAMS) {
@@ -37,6 +40,20 @@ export function getSavedUtmParams(): Record<string, string> {
   } catch {
     return {};
   }
+}
+
+// Attribution for a lead/order should stick to whichever campaign first
+// brought the visitor in, so the saved first-touch UTM always wins for a
+// key it already has; only a UTM param present on the current URL but
+// missing from the saved set gets added.
+export function getMergedUtmParams(currentParams: Record<string, string>): Record<string, string> {
+  const saved = getSavedUtmParams();
+  const merged: Record<string, string> = {};
+  for (const key of UTM_PARAMS) {
+    const value = saved[key] || currentParams[key];
+    if (value) merged[key] = value;
+  }
+  return merged;
 }
 
 export function track(eventName: string, params?: Record<string, unknown>): void {

@@ -44,6 +44,7 @@ export interface MockLeadDraft {
   name: string;
   email: string;
   phone: string;
+  utm?: Record<string, string>;
 }
 
 export function saveLeadDraft(lead: MockLeadDraft) {

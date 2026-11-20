@@ -14,6 +14,7 @@ export interface Lead {
   phone: string;
   serviceSlug: string;
   extra: Record<string, string>;
+  utm?: Record<string, string>;
 }
 
 export type OrderStatus =
@@ -50,6 +51,7 @@ export interface Order {
   couponCode?: string;
   status: OrderStatus;
   createdAt: string;
+  utm?: Record<string, string>;
 }
 
 export type PaymentStatus = "pending" | "paid" | "failed";

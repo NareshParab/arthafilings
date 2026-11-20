@@ -23,6 +23,7 @@ import { siteConfig } from "@/lib/site-config";
 import { mockVerifyOtp } from "@/lib/mock-api";
 import { saveLeadDraft } from "@/lib/mock-session";
 import { extraFieldConfigs, extraFieldsZodShape, defaultValuesForExtraFields } from "@/lib/service-forms";
+import { getMergedUtmParams } from "@/lib/analytics";
 import { indiaStatesAndUts } from "@/data/india-states";
 import { countries } from "@/data/countries";
 import type { ExtraField, ServiceItem } from "@/data/service-catalog";
@@ -79,18 +80,21 @@ export default function ServiceLeadForm({ service }: { service: ServiceItem }) {
 function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<"form" | "otp" | "verified">("form");
-  const [lead, setLead] = useState<(Lead & { utm: Record<string, string> }) | null>(null);
+  const [lead, setLead] = useState<Lead | null>(null);
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
 
   const utm = useMemo(
-    () => ({
-      utm_source: searchParams.get("utm_source") ?? "",
-      utm_medium: searchParams.get("utm_medium") ?? "",
-      utm_campaign: searchParams.get("utm_campaign") ?? "",
-    }),
+    () =>
+      getMergedUtmParams({
+        utm_source: searchParams.get("utm_source") ?? "",
+        utm_medium: searchParams.get("utm_medium") ?? "",
+        utm_campaign: searchParams.get("utm_campaign") ?? "",
+        utm_term: searchParams.get("utm_term") ?? "",
+        utm_content: searchParams.get("utm_content") ?? "",
+      }),
     [searchParams]
   );
 
@@ -134,7 +138,7 @@ function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
       extra[field] = rest[field] ?? "";
     }
     setLead({ name, email, phone, serviceSlug: service.slug, extra, utm });
-    saveLeadDraft({ name, email, phone });
+    saveLeadDraft({ name, email, phone, utm });
     setSecondsLeft(RESEND_SECONDS);
     setStep("otp");
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -23,6 +23,7 @@ import { findCoupon } from "@/data/coupons";
 import { GSTIN_REGEX } from "@/lib/service-forms";
 import { applyCoupon, calcGst, calcTotal } from "@/lib/pricing";
 import { getLeadDraft, saveOrderDraft } from "@/lib/mock-session";
+import { getMergedUtmParams } from "@/lib/analytics";
 import type { MockPackagePrice } from "@/data/packages";
 import type { ServiceItem } from "@/data/service-catalog";
 import type { Coupon, Order, PaymentMethod } from "@/types";
@@ -68,6 +69,7 @@ export default function CheckoutFlow({
   packagePrice: MockPackagePrice;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [details, setDetails] = useState<DetailsValues | null>(null);
   const [couponCode, setCouponCode] = useState("");
@@ -161,6 +163,13 @@ export default function CheckoutFlow({
       couponCode: appliedCoupon?.code,
       status: "placed",
       createdAt: new Date().toISOString(),
+      utm: getMergedUtmParams({
+        utm_source: searchParams.get("utm_source") ?? "",
+        utm_medium: searchParams.get("utm_medium") ?? "",
+        utm_campaign: searchParams.get("utm_campaign") ?? "",
+        utm_term: searchParams.get("utm_term") ?? "",
+        utm_content: searchParams.get("utm_content") ?? "",
+      }),
     };
 
     saveOrderDraft(order);
