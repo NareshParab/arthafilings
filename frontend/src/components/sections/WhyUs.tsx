@@ -1,5 +1,6 @@
 import { Users, Tag, ListChecks, MessageCircle } from "lucide-react";
 import { whyArthafilings, type WhyItem } from "@/data/home-content";
+import { siteConfig } from "@/lib/site-config";
 
 const iconMap: Record<WhyItem["icon"], React.ComponentType<{ className?: string }>> = {
   Users,
@@ -13,7 +14,7 @@ export default function WhyUs() {
     <section className="bg-card">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <h2 className="text-center text-2xl font-bold tracking-tight text-navy sm:text-3xl">
-          Why Arthafilings
+          Why {siteConfig.name}
         </h2>
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {whyArthafilings.map((item) => {

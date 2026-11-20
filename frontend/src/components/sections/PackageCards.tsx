@@ -6,7 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Package } from "@/types";
 
-export default function PackageCards({ packages }: { packages: Package[] }) {
+export default function PackageCards({
+  packages,
+  serviceSlug,
+}: {
+  packages: Package[];
+  serviceSlug: string;
+}) {
   return (
     <section id="packages" className="bg-cream">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
@@ -52,7 +58,9 @@ export default function PackageCards({ packages }: { packages: Package[] }) {
                   nativeButton={false}
                   className="w-full"
                   variant={pkg.popular ? "default" : "outline"}
-                  render={<Link href={`/checkout?package=${pkg.id}`}>{pkg.ctaLabel}</Link>}
+                  render={
+                    <Link href={`/checkout?service=${serviceSlug}&package=${pkg.id}`}>{pkg.ctaLabel}</Link>
+                  }
                 />
               </CardFooter>
             </Card>

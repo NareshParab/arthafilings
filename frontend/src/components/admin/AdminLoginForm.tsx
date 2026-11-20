@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { signInAs } from "@/lib/admin-session";
+import { getSafeNextPath } from "@/lib/safe-redirect";
+import { siteConfig } from "@/lib/site-config";
 import type { AdminRole } from "@/types/admin";
 import { ADMIN_USERS } from "@/data/admin-mock";
 
@@ -17,7 +19,7 @@ const ROLE_OPTIONS: { role: AdminRole; label: string }[] = [
 function LoginButtons() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/admin";
+  const next = getSafeNextPath(searchParams.get("next"), "/admin");
 
   function handleSignIn(role: AdminRole) {
     signInAs(role);
@@ -43,7 +45,7 @@ export default function AdminLoginForm() {
   return (
     <Card className="w-full max-w-sm ring-border">
       <CardHeader>
-        <CardTitle className="text-navy">Arthafilings admin</CardTitle>
+        <CardTitle className="text-navy">{siteConfig.name} admin</CardTitle>
         <CardDescription>
           Development-only mock sign-in. Pick a role to see what that role can do — real auth arrives in the
           backend phase.

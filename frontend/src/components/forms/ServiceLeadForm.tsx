@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +24,7 @@ import { siteConfig } from "@/lib/site-config";
 import { mockVerifyOtp } from "@/lib/mock-api";
 import { saveLeadDraft } from "@/lib/mock-session";
 import { extraFieldConfigs, extraFieldsZodShape, defaultValuesForExtraFields } from "@/lib/service-forms";
+import { getMergedUtmParams } from "@/lib/analytics";
 import { indiaStatesAndUts } from "@/data/india-states";
 import { countries } from "@/data/countries";
 import type { ExtraField, ServiceItem } from "@/data/service-catalog";
@@ -46,6 +48,16 @@ type LeadFormValues = {
 } & Partial<Record<ExtraField, string>>;
 
 const RESEND_SECONDS = 30;
+
+// Accepts a pasted "+91 98765 43210" or a value with spaces/dashes and
+// normalizes it down to a plain 10-digit mobile number.
+function cleanPhoneInput(raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.length > 10 && digits.startsWith("91")) {
+    digits = digits.slice(2);
+  }
+  return digits.slice(0, 10);
+}
 
 function buildWhatsAppHref() {
   const digits = siteConfig.whatsappNumber.replace(/[^\d]/g, "");
@@ -79,18 +91,21 @@ export default function ServiceLeadForm({ service }: { service: ServiceItem }) {
 function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<"form" | "otp" | "verified">("form");
-  const [lead, setLead] = useState<(Lead & { utm: Record<string, string> }) | null>(null);
+  const [lead, setLead] = useState<Lead | null>(null);
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
 
   const utm = useMemo(
-    () => ({
-      utm_source: searchParams.get("utm_source") ?? "",
-      utm_medium: searchParams.get("utm_medium") ?? "",
-      utm_campaign: searchParams.get("utm_campaign") ?? "",
-    }),
+    () =>
+      getMergedUtmParams({
+        utm_source: searchParams.get("utm_source") ?? "",
+        utm_medium: searchParams.get("utm_medium") ?? "",
+        utm_campaign: searchParams.get("utm_campaign") ?? "",
+        utm_term: searchParams.get("utm_term") ?? "",
+        utm_content: searchParams.get("utm_content") ?? "",
+      }),
     [searchParams]
   );
 
@@ -134,7 +149,7 @@ function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
       extra[field] = rest[field] ?? "";
     }
     setLead({ name, email, phone, serviceSlug: service.slug, extra, utm });
-    saveLeadDraft({ name, email, phone });
+    saveLeadDraft({ name, email, phone, utm });
     setSecondsLeft(RESEND_SECONDS);
     setStep("otp");
   }
@@ -170,13 +185,19 @@ function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
         <form onSubmit={handleSubmit(onSubmitLead)} className="space-y-4" noValidate>
           <div className="space-y-1.5">
             <Label htmlFor="name">Full name</Label>
-            <Input id="name" placeholder="Your full name" {...register("name")} />
+            <Input id="name" autoComplete="name" placeholder="Your full name" {...register("name")} />
             {errors.name && <p className="text-sm text-destructive">{errors.name.message as string}</p>}
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              {...register("email")}
+            />
             {errors.email && <p className="text-sm text-destructive">{errors.email.message as string}</p>}
           </div>
 
@@ -186,12 +207,19 @@ function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
               <span className="flex h-8 items-center rounded-lg border border-input px-2.5 text-sm text-muted-foreground">
                 +91
               </span>
-              <Input
-                id="phone"
-                inputMode="numeric"
-                maxLength={10}
-                placeholder="98765 43210"
-                {...register("phone")}
+              <Controller
+                control={control}
+                name="phone"
+                render={({ field }) => (
+                  <Input
+                    id="phone"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    placeholder="98765 43210"
+                    value={field.value ?? ""}
+                    onChange={(event) => field.onChange(cleanPhoneInput(event.target.value))}
+                  />
+                )}
               />
             </div>
             {errors.phone && <p className="text-sm text-destructive">{errors.phone.message as string}</p>}
@@ -278,13 +306,20 @@ function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
             name="consent"
             render={({ field }) => (
               <div className="space-y-1.5">
-                <label className="flex items-start gap-2 text-sm text-foreground">
+                <div className="flex items-start gap-2 text-sm text-foreground">
                   <Checkbox
+                    id="consent"
                     checked={field.value}
                     onCheckedChange={(checked) => field.onChange(checked === true)}
                   />
-                  I agree to be contacted about my enquiry.
-                </label>
+                  <Label htmlFor="consent" className="font-normal">
+                    I agree to be contacted about my enquiry. Read our{" "}
+                    <Link href="/privacy" className="font-medium text-primary hover:text-primary-hover">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </Label>
+                </div>
                 {errors.consent && (
                   <p className="text-sm text-destructive">{errors.consent.message as string}</p>
                 )}
