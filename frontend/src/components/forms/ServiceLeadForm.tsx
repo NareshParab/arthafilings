@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,6 +48,16 @@ type LeadFormValues = {
 } & Partial<Record<ExtraField, string>>;
 
 const RESEND_SECONDS = 30;
+
+// Accepts a pasted "+91 98765 43210" or a value with spaces/dashes and
+// normalizes it down to a plain 10-digit mobile number.
+function cleanPhoneInput(raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.length > 10 && digits.startsWith("91")) {
+    digits = digits.slice(2);
+  }
+  return digits.slice(0, 10);
+}
 
 function buildWhatsAppHref() {
   const digits = siteConfig.whatsappNumber.replace(/[^\d]/g, "");
@@ -174,13 +185,19 @@ function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
         <form onSubmit={handleSubmit(onSubmitLead)} className="space-y-4" noValidate>
           <div className="space-y-1.5">
             <Label htmlFor="name">Full name</Label>
-            <Input id="name" placeholder="Your full name" {...register("name")} />
+            <Input id="name" autoComplete="name" placeholder="Your full name" {...register("name")} />
             {errors.name && <p className="text-sm text-destructive">{errors.name.message as string}</p>}
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              {...register("email")}
+            />
             {errors.email && <p className="text-sm text-destructive">{errors.email.message as string}</p>}
           </div>
 
@@ -190,12 +207,19 @@ function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
               <span className="flex h-8 items-center rounded-lg border border-input px-2.5 text-sm text-muted-foreground">
                 +91
               </span>
-              <Input
-                id="phone"
-                inputMode="numeric"
-                maxLength={10}
-                placeholder="98765 43210"
-                {...register("phone")}
+              <Controller
+                control={control}
+                name="phone"
+                render={({ field }) => (
+                  <Input
+                    id="phone"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    placeholder="98765 43210"
+                    value={field.value ?? ""}
+                    onChange={(event) => field.onChange(cleanPhoneInput(event.target.value))}
+                  />
+                )}
               />
             </div>
             {errors.phone && <p className="text-sm text-destructive">{errors.phone.message as string}</p>}
@@ -289,7 +313,11 @@ function ServiceLeadFormContent({ service }: { service: ServiceItem }) {
                     onCheckedChange={(checked) => field.onChange(checked === true)}
                   />
                   <Label htmlFor="consent" className="font-normal">
-                    I agree to be contacted about my enquiry.
+                    I agree to be contacted about my enquiry. Read our{" "}
+                    <Link href="/privacy" className="font-medium text-primary hover:text-primary-hover">
+                      Privacy Policy
+                    </Link>
+                    .
                   </Label>
                 </div>
                 {errors.consent && (
