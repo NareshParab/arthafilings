@@ -8,6 +8,7 @@ import type { AdminServiceContent, AdminServiceDocument, AdminServiceFaq, AdminS
 import { services, serviceGroups, type ServiceItem } from "@/data/service-catalog";
 import { getServiceContent } from "@/data/service-content";
 import { mockPackagePrices } from "@/data/packages";
+import { isMockAllowed } from "@/lib/site-env";
 
 function buildDocuments(service: ServiceItem): AdminServiceDocument[] {
   const group = serviceGroups.find((g) => g.slug === service.group)!;
@@ -120,7 +121,7 @@ export function buildDefaultContent(service: ServiceItem): AdminServiceContent {
   };
 }
 
-const isDev = process.env.NODE_ENV !== "production";
+const isDev = isMockAllowed();
 
 // A stable empty reference for production (same shape as the other mock
 // stores' empty seeds, e.g. ADMIN_COUPONS/ADMIN_STAFF) — useAdminServiceContentMap's

@@ -1,16 +1,21 @@
 #!/usr/bin/env node
-// Launch readiness gate. In a real production build (NEXT_PUBLIC_SITE_ENV=production)
-// this runs as "prebuild" and fails the build with a full list of blockers.
-// Run on demand any time with `npm run launch:check` (always checks, regardless of env).
-import { readFileSync } from "node:fs";
+// Launch readiness gate. Runs as "prebuild" on every `next build`, and fails
+// the build with a full list of blockers whenever the build would behave as
+// production (see getSiteEnv() — that includes a build where
+// NEXT_PUBLIC_SITE_ENV was simply never set, which is the risky default this
+// gate exists to catch). Run on demand any time with `npm run launch:check`.
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { services } from "../src/data/service-catalog.ts";
+import { services, serviceGroups } from "../src/data/service-catalog.ts";
 import { mockPackagePrices } from "../src/data/packages.ts";
 import { siteConfig } from "../src/lib/site-config.ts";
-import { buildDefaultContent } from "../src/data/admin-services-mock.ts";
+import { getServiceContent } from "../src/data/service-content.ts";
+import { termsContent, privacyContent, refundPolicyContent, disclaimerContent } from "../src/data/legal-content.ts";
+import { getSiteEnv } from "../src/lib/site-env.ts";
 
 const forced = process.argv.includes("--force");
-const isProductionCheck = forced || process.env.NEXT_PUBLIC_SITE_ENV === "production";
+const resolvedSiteEnv = getSiteEnv();
+const isProductionCheck = forced || resolvedSiteEnv === "production";
 
 if (!isProductionCheck) {
   // Not a production build — this check is a no-op so normal dev/preview
@@ -19,6 +24,19 @@ if (!isProductionCheck) {
 }
 
 const problems = [];
+
+// 0. NEXT_PUBLIC_SITE_ENV not set explicitly, in a build that actually
+// resolves to production. getSiteEnv() already defaults an unset value to
+// "production" (mocks stay off), but a build should never reach production
+// by accident — the deployer must say so on purpose. (This is separate from
+// `--force`, which can trigger isProductionCheck under NODE_ENV=development
+// too, where getSiteEnv() correctly returns "development" and this warning
+// would not apply.)
+if (resolvedSiteEnv === "production" && !process.env.NEXT_PUBLIC_SITE_ENV) {
+  problems.push(
+    `NEXT_PUBLIC_SITE_ENV is not set. This build will behave as production (mocks are off, which is safe), but you should set NEXT_PUBLIC_SITE_ENV=production explicitly before shipping to confirm that's intended.`
+  );
+}
 
 // 1. Mock prices on packages used by a 'live' service.
 const liveServices = services.filter((s) => s.mode === "live");
@@ -47,8 +65,9 @@ if (PLACEHOLDER_EMAIL_PATTERN.test(siteConfig.email)) {
   problems.push(`site-config.ts email is still a placeholder ("${siteConfig.email}").`);
 }
 
-// 3. Services marked "ready" without a real legal review, or with
-// unresolved [TBD]/[VERIFY] markers in their actual page content.
+// 3. Services marked "ready" in the PUBLIC content (data/service-content.ts —
+// what ServicePageTemplate actually renders) without a real legal review, or
+// with unresolved [TBD]/[VERIFY] markers in their actual page content.
 const PLACEHOLDER_MARKERS = ["[TBD]", "[VERIFY]"];
 function findMarkers(text) {
   if (!text) return [];
@@ -56,7 +75,9 @@ function findMarkers(text) {
 }
 
 for (const service of services) {
-  const content = buildDefaultContent(service);
+  const group = serviceGroups.find((g) => g.slug === service.group);
+  if (!group) continue;
+  const content = getServiceContent(service, group);
   if (content.contentStatus !== "ready") continue;
 
   // Legal review itself must be a real name/date, not empty or a placeholder.
@@ -77,13 +98,16 @@ for (const service of services) {
   // checked separately above.
   const contentFields = {
     intro: content.intro,
-    whatIsIt: content.whatIsIt,
+    whatIsIt: [content.whatIsIt.heading, ...content.whatIsIt.paragraphs].join(" "),
     whoNeedsIt: content.whoNeedsIt.join(" "),
-    benefits: content.benefits.join(" "),
-    seoTitle: content.seoTitle,
-    seoDescription: content.seoDescription,
+    whatYouGet: content.whatYouGet.join(" "),
+    documentsNeeded: content.documentsNeeded
+      .map((group) => `${group.heading} ${group.items.join(" ")}`)
+      .join(" "),
     faqs: content.faqs.map((f) => `${f.question} ${f.answer}`).join(" "),
-    packages: content.packages.map((p) => `${p.govtFeeNote} ${p.features.join(" ")}`).join(" "),
+    packages: (content.packages ?? [])
+      .map((p) => `${p.price ?? ""} ${p.govtFeeNote ?? ""} ${(p.features ?? []).join(" ")}`)
+      .join(" "),
   };
   for (const [fieldName, fieldValue] of Object.entries(contentFields)) {
     const markers = findMarkers(fieldValue);
@@ -95,22 +119,77 @@ for (const service of services) {
   }
 }
 
-// 4. Coupons or demo orders reachable in production data. These are source
+// 4. Legal pages (terms/privacy/refund/disclaimer) ship their lastUpdated,
+// intro and every section's body on every build, ready or not — none of it
+// is behind a draft/ready gate the way service pages are, so any
+// [TBD]/[VERIFY] marker left in here goes straight to real visitors.
+for (const doc of [termsContent, privacyContent, refundPolicyContent, disclaimerContent]) {
+  const lastUpdatedMarkers = findMarkers(doc.lastUpdated);
+  if (lastUpdatedMarkers.length > 0) {
+    problems.push(`Legal page "${doc.title}" still has a placeholder lastUpdated ("${doc.lastUpdated}").`);
+  }
+  const bodyMarkers = findMarkers(
+    [doc.intro, ...doc.sections.flatMap((section) => [section.heading, ...section.paragraphs])].join(" ")
+  );
+  if (bodyMarkers.length > 0) {
+    problems.push(`Legal page "${doc.title}" still has ${bodyMarkers.join(", ")} in its body text.`);
+  }
+}
+
+// 5. Coupons or demo orders reachable in production data. These are source
 // checks (not env-dependent imports) because the whole point is to verify
 // the *gating itself* is in place in the committed source.
 const srcDir = fileURLToPath(new URL("../src", import.meta.url));
 
 const couponsSource = readFileSync(`${srcDir}/data/coupons.ts`, "utf8");
-if (!/NODE_ENV\s*!==\s*["']production["']/.test(couponsSource)) {
+if (!/isMockAllowed\s*\(\s*\)/.test(couponsSource)) {
   problems.push(
-    `data/coupons.ts does not appear to gate coupons behind NODE_ENV !== "production" — mock coupons would be usable in production.`
+    `data/coupons.ts does not appear to gate coupons behind isMockAllowed() — mock coupons would be usable in production.`
   );
 }
 
 const ordersSource = readFileSync(`${srcDir}/data/orders.ts`, "utf8");
-if (!/NODE_ENV\s*!==\s*["']production["']/.test(ordersSource)) {
+if (!/isMockAllowed\s*\(\s*\)/.test(ordersSource)) {
   problems.push(
-    `data/orders.ts does not appear to gate demo orders behind NODE_ENV !== "production" — demo orders would show in production.`
+    `data/orders.ts does not appear to gate demo orders behind isMockAllowed() — demo orders would show in production.`
+  );
+}
+
+// 6. Any import of the mock OTP/login API (lib/mock-api.ts) from src outside
+// tests. This mock powers login OTP verification for both the customer
+// dashboard and the service lead form — real backend auth must replace it
+// before launch.
+const SCAN_EXTENSIONS = new Set([".ts", ".tsx"]);
+const TEST_PATH_PATTERN = /(^|[/\\])(__tests__|.*\.test\.|.*\.spec\.)/;
+
+function walk(dir, files = []) {
+  for (const entry of readdirSync(dir)) {
+    const fullPath = `${dir}/${entry}`;
+    const stats = statSync(fullPath);
+    if (stats.isDirectory()) {
+      walk(fullPath, files);
+    } else if (SCAN_EXTENSIONS.has(entry.slice(entry.lastIndexOf(".")))) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+const MOCK_API_REFERENCE_PATTERN = /(?:from|import|require)\s*\(?\s*["']@\/lib\/mock-api["']/;
+
+const mockApiImporters = [];
+for (const file of walk(srcDir)) {
+  const relativePath = file.slice(srcDir.length + 1);
+  if (TEST_PATH_PATTERN.test(relativePath)) continue;
+  if (file.endsWith("/lib/mock-api.ts")) continue;
+  const text = readFileSync(file, "utf8");
+  if (MOCK_API_REFERENCE_PATTERN.test(text)) {
+    mockApiImporters.push(`src/${relativePath}`);
+  }
+}
+if (mockApiImporters.length > 0) {
+  problems.push(
+    `lib/mock-api.ts (mock OTP verification / contact form) is still imported outside tests by: ${mockApiImporters.join(", ")}. Replace with a real API before launch.`
   );
 }
 

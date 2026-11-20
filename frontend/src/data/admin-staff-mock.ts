@@ -2,8 +2,9 @@
 // (same 4 people) with the extra fields the staff page needs. Replace with
 // a real staff/user API in the backend phase.
 import type { StaffMember } from "@/types/admin";
+import { isMockAllowed } from "@/lib/site-env";
 
-const isDev = process.env.NODE_ENV !== "production";
+const isDev = isMockAllowed();
 
 const adminStaffSeed: StaffMember[] = [
   { id: "u-meera", name: "Meera Iyer", email: "meera.iyer@arthafilings.example", role: "admin", status: "active", lastActiveAt: "2026-11-18T09:40:00.000Z", invitedAt: "2026-01-05T09:00:00.000Z" },

@@ -10,9 +10,47 @@ import ClosingCta from "@/components/sections/ClosingCta";
 import ServiceLeadForm from "@/components/forms/ServiceLeadForm";
 import { getGroupServices, type ServiceGroup, type ServiceItem } from "@/data/service-catalog";
 import { getServiceContent, processSteps } from "@/data/service-content";
+import { isMockAllowed } from "@/lib/site-env";
 
 function priceChip(service: ServiceItem) {
   return service.cta === "quote" ? "Get a quote" : "From ₹ [TBD]";
+}
+
+// Production's minimal stand-in for a service whose content hasn't been
+// legally reviewed yet: just the title, the lead form, and a "talk to our
+// team" block — no price chip, no FAQ structured data, no [TBD]/[VERIFY]
+// placeholder text.
+function DraftServicePage({ service, group }: { service: ServiceItem; group: ServiceGroup }) {
+  return (
+    <>
+      <section className="bg-blue-tint">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
+          <Badge variant="outline" className="border-primary/30 text-primary">
+            {group.name}
+          </Badge>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-navy sm:text-4xl">
+            {service.name}
+          </h1>
+
+          <div className="mt-10 grid gap-10 lg:grid-cols-2 lg:items-start">
+            <div>
+              <h2 className="text-lg font-semibold text-navy">Talk to our team</h2>
+              <p className="mt-3 text-foreground">
+                Share your details and our team will get in touch to help with {service.name.toLowerCase()}.
+              </p>
+            </div>
+
+            <ServiceLeadForm service={service} />
+          </div>
+        </div>
+      </section>
+
+      <ClosingCta
+        description={`Talk to our team about ${service.name.toLowerCase()}.`}
+        ctaHref="#lead-form"
+      />
+    </>
+  );
 }
 
 export default function ServicePageTemplate({
@@ -23,11 +61,17 @@ export default function ServicePageTemplate({
   group: ServiceGroup;
 }) {
   const content = getServiceContent(service, group);
+  const isDraft = content.contentStatus === "draft";
+
+  if (isDraft && !isMockAllowed()) {
+    return <DraftServicePage service={service} group={group} />;
+  }
+
   const relatedServices = getGroupServices(group.slug).filter((item) => item.slug !== service.slug);
 
   return (
     <>
-      {content.isDraft && process.env.NODE_ENV !== "production" && (
+      {isDraft && (
         <div className="bg-destructive px-4 py-2 text-center text-xs font-semibold tracking-wide text-white">
           DRAFT CONTENT — generic placeholder text for this service, not reviewed. [VERIFY] [TBD]
         </div>

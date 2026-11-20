@@ -2,8 +2,9 @@
 // which the public checkout reads — the two aren't wired together yet.
 // Replace with real API data in the backend phase.
 import type { AdminCoupon } from "@/types/admin";
+import { isMockAllowed } from "@/lib/site-env";
 
-const isDev = process.env.NODE_ENV !== "production";
+const isDev = isMockAllowed();
 
 const adminCouponsSeed: AdminCoupon[] = [
   {

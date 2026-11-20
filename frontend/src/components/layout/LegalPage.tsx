@@ -1,9 +1,14 @@
 import type { LegalDoc } from "@/data/legal-content";
+import { getSiteEnv } from "@/lib/site-env";
+import { hasPlaceholderMarker } from "@/lib/placeholder-markers";
 
 export default function LegalPage({ doc }: { doc: LegalDoc }) {
+  const inProduction = getSiteEnv() === "production";
+  const hideLastUpdated = inProduction && hasPlaceholderMarker(doc.lastUpdated);
+
   return (
     <div className="bg-card">
-      {process.env.NODE_ENV !== "production" && (
+      {!inProduction && (
         <div className="bg-destructive/10 px-4 py-3 text-center text-sm font-medium text-destructive">
           DRAFT: must be reviewed by a lawyer before launch.
         </div>
@@ -11,7 +16,9 @@ export default function LegalPage({ doc }: { doc: LegalDoc }) {
 
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         <h1 className="text-3xl font-bold tracking-tight text-navy sm:text-4xl">{doc.title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Last updated: {doc.lastUpdated}</p>
+        {!hideLastUpdated && (
+          <p className="mt-2 text-sm text-muted-foreground">Last updated: {doc.lastUpdated}</p>
+        )}
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[220px_1fr]">
           <nav aria-label="Table of contents" className="hidden lg:block">
