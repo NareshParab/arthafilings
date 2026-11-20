@@ -74,7 +74,7 @@ export default function ServicePageTemplate({
       <TrustStrip />
 
       {service.mode === "live" && content.packages ? (
-        <PackageCards packages={content.packages} />
+        <PackageCards packages={content.packages} serviceSlug={service.slug} />
       ) : (
         <section id="packages" className="bg-cream">
           <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
