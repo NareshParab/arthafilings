@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Arthafilings — Frontend
 
-## Getting Started
+Next.js (App Router) frontend for Arthafilings, an Indian business registration site. Service
+pages, lead capture, a mock checkout/payment flow, a customer dashboard, and an admin panel are
+all implemented here against mock data; a real backend will replace the mock layer later.
 
-First, run the development server:
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` — start the Turbopack dev server
+- `npm run build` — production build (runs `scripts/check-launch-readiness.mjs` first, which
+  blocks the build if mock/placeholder content is still live)
+- `npm run lint` — ESLint
+- `npm run launch:check` — run the launch-readiness check on demand (`--force` to ignore the
+  normal gating)
+- `npm run launch:checklist` — generate a launch checklist from the service catalog
 
-## Learn More
+## Project layout
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app/` — routes (site pages, `(auth)` login, `admin/`, `dashboard/`)
+- `src/components/` — UI, forms, checkout, dashboard, and admin components
+- `src/data/` — service catalog, mock pricing/coupons/orders, static content
+- `src/lib/` — mock session/storage, analytics, pricing, and other shared helpers
+- `src/types/` — shared TypeScript types
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Conventions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- All service content comes from `src/data/service-catalog.ts`; a new service is a new catalog
+  entry (plus an optional content entry), not a new page template.
+- Prices, fees, and other unconfirmed facts are marked `[VERIFY]` or `[TBD]` until confirmed.
+- The brand palette lives in `src/app/globals.css` as CSS variables / Tailwind theme tokens —
+  don't hardcode colours.
+- Auth, OTP, payments, and the admin data store are all mocked client-side (see `src/lib/mock-*`)
+  until the backend exists.
