@@ -11,6 +11,7 @@
   --color-blue-tint: var(--blue-tint);
   --color-cream: var(--cream);
   --color-gold: var(--gold);
+  --color-whatsapp: var(--whatsapp);
   --color-primary-hover: var(--primary-hover);
   --font-sans: var(--font-sans);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -66,6 +67,7 @@
   --card-foreground: var(--foreground);
   --cream: #fbf6ea;
   --gold: #926e26; /* darkened from #b7892f — white-on-gold was 3.17:1, below WCAG AA; same hue, now 4.69:1 */
+  --whatsapp: #25d366;
   --muted-foreground: #5b6678;
   --border: #dce3ee;
   --input: var(--border);
