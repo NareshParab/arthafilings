@@ -8,7 +8,7 @@ Scope: `frontend/` only. Report-only — no source files were changed. Sources o
 
 | Severity | Count |
 |---|---|
-| Critical | 2 |
+| Critical | 3 |
 | Important | 9 |
 | Minor | 7 |
 
@@ -29,14 +29,16 @@ No warnings appeared in the dev build output beyond what's listed above.
 
 ## 3. Part B — Browser click-through (headless Chrome, `next dev`, 1280px)
 
-This was run via a CDP-driven headless Chrome script against `next dev`. Several steps could not be reliably automated and are marked accordingly rather than guessed. One finding that looked like a bug (consent checkbox not toggling under CDP-simulated clicks) was checked against source and the binding code (`ServiceLeadForm.tsx:282-285`, a React-Hook-Form `Controller` around a Base UI `Checkbox` with `checked`/`onCheckedChange` wired correctly) looks correct — the most likely explanation is that Base UI's checkbox listens for native pointer events that the CDP mouse-event simulation didn't trigger, not a real app defect. Flagged **[VERIFY]** — needs a human click-test, not treated as confirmed.
+This was run via a CDP-driven headless Chrome script against `next dev`. Several steps could not be reliably automated and are marked accordingly rather than guessed.
+
+**Update after manual follow-up verification:** the consent-checkbox finding below was re-tested against a real, **visible** (non-headless) Chrome window, using fully trusted CDP mouse input (`mouseMoved`/`mousePressed`/`mouseReleased` at the element's exact screen coordinates, repeated 3 times) rather than a JS `.click()`. In-page `pointerdown`/`pointerup`/`click` listeners confirmed the click genuinely reaches the checkbox element every time, with zero console errors — yet `aria-checked` never flips from `false`. This rules out the "headless automation artifact" explanation. Tracing into the installed `@base-ui/react@1.9.0` source (`node_modules/@base-ui/react/checkbox/root/CheckboxRoot.js`) shows the visible checkbox's `onClick` calls `event.preventDefault()` and then `dispatchClickWithModifiers(input, event)` to forward activation to a visually-hidden native `<input type="checkbox">`, whose own `onChange` is what actually calls `onCheckedChange`/updates state. That hidden input is rendered with `position:fixed;top:0;left:0` — detached from the visible checkbox's layout position. The click reaches the visible span and the forwarding call does fire (no errors), but the native toggle never lands. This is now **CONFIRMED as a real, reproducible bug** (see D17), not a test-harness issue — see D2 in Part D, this is the same severity: it blocks every lead form on the site (and, since `CheckoutFlow.tsx`'s "I need a GST invoice" control uses the same `Checkbox` component, likely blocks that step of checkout too).
 
 | Flow | Step | Result |
 |---|---|---|
 | Visitor | Home loads | PASS |
 | Visitor | Mega menu opens | Unverified (automation selector issue, not a confirmed bug) |
 | Visitor | Service page loads with lead form | PASS |
-| Visitor | Fill + submit lead form | Blocked — consent checkbox didn't toggle under automation; **[VERIFY]** against a real browser, not confirmed |
+| Visitor | Fill + submit lead form | **FAIL — confirmed real bug (D17).** Consent checkbox never toggles; verified with trusted clicks in a visible browser, not an automation artifact |
 | Visitor | OTP → success | Not reached (blocked above) |
 | Buy | Package button → checkout | **FAIL — confirmed real bug.** `PackageCards.tsx:55` → `/checkout?package=<id>` with no `service` param; checkout requires both and renders "We couldn't find that service". Reproduced live in the browser. See Part E #1. |
 | Buy | Checkout → coupon → GST invoice → payment-mock → success/failure → dashboard | Not reliably reached (blocked upstream / same checkbox-component family suspected) |
@@ -122,6 +124,7 @@ No console errors or warnings were captured during the session (the listener was
 |---|---|---|---|---|---|
 | D1 | Critical | `src/components/auth/LoginFlow.tsx:29,122`; `src/components/admin/AdminLoginForm.tsx:20,24` | `?next=` query value is passed straight to `router.replace(next)` with no validation — open-redirect pattern (e.g. `/login?next=https://example.com`) | Read both files; confirmed the call sites read `searchParams.get("next")` and pass it unchecked to the router | Only accept `next` if it starts with a single `/` and doesn't start with `//` or contain a scheme; otherwise fall back to the default |
 | D2 | Critical | `src/components/service/PackageCards.tsx:55` → `src/app/(site)/checkout/page.tsx:57-68` | Package "Continue" buttons link to `/checkout?package=<id>` with no `service` param; checkout requires both, so every package click currently shows "We couldn't find that service" | Read both files; reproduced live in a browser session against `next dev` | Have `PackageCards` receive/forward the current service slug into the checkout link |
+| D17 | Critical | `src/components/ui/checkbox.tsx` (wraps `node_modules/@base-ui/react/checkbox/root/CheckboxRoot.js`), used by `ServiceLeadForm.tsx:282-285` ("I agree to be contacted") and `CheckoutFlow.tsx`'s GST-invoice checkbox | The consent checkbox never toggles — `aria-checked` stays `false` under real, trusted clicks. This blocks every lead-form submission site-wide (the submit button is gated on `consent`), and likely blocks the GST-invoice step of checkout, which uses the same component. Root-caused to `@base-ui/react@1.9.0`: the visible span's click handler calls `preventDefault()` then forwards activation via `dispatchClickWithModifiers()` to a visually-hidden native `<input type="checkbox">` (rendered at `position:fixed;top:0;left:0`), whose `onChange` is what actually calls `onCheckedChange`; that forwarded activation isn't resulting in the native toggle, with no console errors | Manually re-verified in a **visible** (non-headless) Chrome with fully trusted CDP mouse clicks (not `.click()`), 3 repeated press/release cycles at the element's exact coordinates; attached in-page `pointerdown`/`pointerup`/`click` listeners that confirmed the click reaches the element every time; `aria-checked` never changed; 0 console errors. Traced the mechanism in the installed `@base-ui/react` source. | Pin/upgrade or downgrade `@base-ui/react` to a version where this works, or replace this checkbox usage with a native `<input type="checkbox">`-backed implementation until fixed; file upstream with Base UI |
 | D3 | Important | `src/lib/admin-services-store.ts` / `src/data/service-content.ts` vs `src/components/service/ServicePageTemplate.tsx` | `contentStatus`/draft flagging is only read by the admin mock; the real public template never checks it. Result: draft pages render raw `[TBD]`/`[VERIFY]` text and a "From ₹ [TBD]" chip to real visitors, FAQ JSON-LD includes placeholder answers, draft pages are included in `sitemap.xml`, and no service page ever sets `noindex` | Grepped `contentStatus` (admin-only hits) and read `ServicePageTemplate.tsx`, `sitemap.ts`, `FAQ.tsx`, `[service]/page.tsx` `generateMetadata` | Gate the public template and sitemap/robots metadata on `contentStatus !== "ready"` |
 | D4 | Important | `frontend/scripts/check-launch-readiness.mjs` | The production-build guard only checks services with `contentStatus === "ready"` (skipping drafts, the opposite of what's risky), and never scans `TrustStrip`, `legal-content.ts`, `about-content.ts`, general `site-config.ts` user-facing text, the price chip, or draft pages; it has no rule against mock OTP/mock login shipping to production | Read the script in full | Expand the scanned file set and flip the draft-skip logic; add an explicit check that mock-auth/mock-OTP code paths are excluded from a real prod build |
 | D5 | Important | `src/lib/analytics.ts:13-36` vs `src/components/forms/ServiceLeadForm.tsx:88-92`, `CheckoutFlow.tsx` | First-touch UTM values are saved to `sessionStorage` but never read by the lead form (which uses the *current* page's query params instead — last-touch) or by checkout (no UTM reference at all) | Grepped `utm` across `src/`; traced the only consumer of `getSavedUtmParams()` to `Analytics.tsx`'s GA click tracker | Attach the saved first-touch UTM to the lead record and the order at creation |
@@ -155,7 +158,6 @@ No console errors or warnings were captured during the session (the listener was
 
 ## 7. Not done yet
 
-- A human (non-automated) click-through to confirm or rule out the consent-checkbox automation finding in Part B.
 - Buy flow steps past the checkout entry point (coupon, GST invoice toggle, payment-mock success/failure, success page, dashboard landing) — blocked by D2/automation limits.
 - Customer OTP → dashboard → order detail → document upload (wrong file type, >10MB) → status timeline — not reliably exercised.
 - Admin lead drawer, service editor packages view, and order maker-checker screens — automation couldn't locate the deep-link selectors; need a manual pass.
@@ -171,17 +173,16 @@ No console errors or warnings were captured during the session (the listener was
 - **Live HTTP 404 check (`curl -I`)** was skipped because, at the time that verification ran, another concurrent process in this session was mid-`npm ci`/build on the same `node_modules`, and starting a second server risked corrupting that run.
 - **Full per-file dead-code/export-usage audit** was sampled, not exhaustive, given the size of `src/` (159 files) relative to the time budget — no orphaned exports were found in the sample checked, beyond the one orphaned file (D10).
 - **Full a11y sweep of all admin forms** (CouponsPage, StaffPage, ServiceEditor) was not completed to the same depth as the customer-facing forms — sampled components were clean.
-- **A real browser (non-headless) run of the consent checkbox** — flagged as `[VERIFY]` rather than confirmed, since the binding code itself looked correct and the failure pattern (fails under JS click, synthetic mouse, and keyboard Space alike) looks more like a CDP/Base-UI pointer-event quirk than an app bug, but this needs a human to actually click it.
 - A stray `next dev` process from outside this session was found running against the repo partway through Part A; it was stopped with the user's explicit confirmation before `npm run build`/`launch:check` were run, so those results reflect a clean environment. An incidental `package-lock.json` diff caused by the repair was discarded before this report was committed.
 
 ## 10-line summary
 
 **5 worst problems:**
-1. The entire "Buy" flow is broken at the first click — package buttons don't carry the service slug to checkout (D2/Part E #1).
-2. `?next=` is an unvalidated open redirect on both customer and admin login (D1).
-3. Draft/placeholder content ([TBD]/[VERIFY] text, mock price chip) can reach real visitors and get indexed — contentStatus is admin-mock-only, not enforced on the public template or sitemap (D3).
-4. The production-build safety net doesn't check most of the actual placeholder surface (TrustStrip, legal/about content, site-config text) and would let mock-OTP/login ship (D4).
-5. Mock-only features are gated on `NODE_ENV`, so a real staging deploy can't show demo data at all — there's effectively no working "staging" tier today (D6).
+1. The consent checkbox on every lead form (and likely checkout's GST-invoice checkbox) never toggles — manually confirmed with trusted clicks in a real browser, so visitors cannot submit any enquiry today (D17).
+2. The entire "Buy" flow is broken at the first click — package buttons don't carry the service slug to checkout (D2/Part E #1).
+3. `?next=` is an unvalidated open redirect on both customer and admin login (D1).
+4. Draft/placeholder content ([TBD]/[VERIFY] text, mock price chip) can reach real visitors and get indexed — contentStatus is admin-mock-only, not enforced on the public template or sitemap (D3).
+5. The production-build safety net doesn't check most of the actual placeholder surface (TrustStrip, legal/about content, site-config text) and would let mock-OTP/login ship (D4).
 
 **5 best things:**
 1. Lint and `tsc` are both completely clean — 0 errors across the whole source tree.
