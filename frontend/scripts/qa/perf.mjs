@@ -4,7 +4,7 @@
 // broader route sample, then LCP/CLS on 5 representative pages under
 // simulated CPU + Fast-4G throttling.
 import { setTimeout as delay } from "node:timers/promises";
-import { launchChrome, openTab, closeTab, navigate, evaluate, withTimeout } from "./cdp.mjs";
+import { launchChrome, openTab, closeTab, navigate, evaluate, withTimeout, waitUntil } from "./cdp.mjs";
 import { startProdServer, QA_BASE_URL } from "./server.mjs";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -79,46 +79,81 @@ async function measureJsBytes(cdpPort, baseUrl) {
   return results.sort((a, b) => b.totalJsBytes - a.totalJsBytes).slice(0, 10);
 }
 
+// LCP trace categories — the web Performance Timeline API
+// (`getEntriesByType("largest-contentful-paint")`) never reports an entry for
+// a tab opened via CDP's /json/new: the LCP spec permanently suppresses it
+// for any document that was ever non-visible during its lifetime, and a
+// freshly created CDP target has exactly that kind of hidden window around
+// creation — confirmed empirically (every route came back lcpMs: null even
+// with Page.bringToFront + focus emulation forced on). Lighthouse and other
+// lab tools hit the same restriction and work around it the same way: read
+// the `largestContentfulPaint::Candidate` trace event via the CDP Tracing
+// domain instead, which isn't subject to the web API's visibility rule.
+const LCP_TRACE_CATEGORIES = "loading,devtools.timeline,disabled-by-default-devtools.timeline,blink.user_timing,rail";
+
+async function measureLcpViaTracing(session, url, { settleMs = 3000 } = {}) {
+  const events = [];
+  session.on("Tracing.dataCollected", (p) => events.push(...(p.value || [])));
+  let tracingDone = false;
+  const doneHandler = () => (tracingDone = true);
+  session.on("Tracing.tracingComplete", doneHandler);
+
+  try {
+    await session.send("Tracing.start", { categories: LCP_TRACE_CATEGORIES, transferMode: "ReportEvents" });
+    await navigate(session, url, { timeoutMs: 30000 });
+    await delay(settleMs);
+    await session.send("Tracing.end");
+    await waitUntil(() => tracingDone, { timeoutMs: 10000, intervalMs: 100 });
+  } finally {
+    session.off("Tracing.tracingComplete", doneHandler);
+  }
+
+  const lcpCandidate = events.filter((e) => e.name === "largestContentfulPaint::Candidate").pop();
+  if (!lcpCandidate) return null;
+  // Multiple navigationStart events can show up (e.g. the tab's initial
+  // about:blank load) — the one for *this* navigation is the closest one
+  // preceding the LCP candidate's own timestamp, not necessarily the first.
+  const navStart = events
+    .filter((e) => e.name === "navigationStart" && e.ts <= lcpCandidate.ts)
+    .sort((a, b) => b.ts - a.ts)[0];
+  if (!navStart) return null;
+  return (lcpCandidate.ts - navStart.ts) / 1000; // trace ts is in microseconds
+}
+
 async function measureVitals(cdpPort, baseUrl) {
   const results = [];
   for (const route of VITALS_ROUTES) {
     const { session, targetId } = await openTab(cdpPort);
     try {
       await session.send("Network.enable");
-      // LCP only gets recorded while the page is "visible" per the Page
-      // Visibility spec — a background tab opened via /json/new never
-      // becomes the focused/active target on its own, so without this the
-      // browser never emits an LCP candidate at all (confirmed: every
-      // route came back lcpMs: null before adding this).
-      await session.send("Page.bringToFront");
-      await session.send("Emulation.setFocusEmulationEnabled", { enabled: true });
       await session.send("Emulation.setCPUThrottlingRate", { rate: 4 });
       await session.send("Network.emulateNetworkConditions", { offline: false, ...FAST_4G });
       await session.send("Emulation.setDeviceMetricsOverride", { width: 375, height: 800, deviceScaleFactor: 2, mobile: true });
 
       const start = Date.now();
-      await navigate(session, `${baseUrl}${route.path}`, { timeoutMs: 30000 });
-      await delay(2500); // let LCP/CLS entries settle under throttling
+      // Budget comfortably above measureLcpViaTracing's own worst case
+      // (navigate's 30000ms + 3000ms settle + 10000ms tracing-complete poll)
+      // — a tighter outer timeout here would abandon the result while the
+      // inner call keeps running, leaking a pending CDP command against a
+      // tab this loop closes moments later.
+      const lcpMs = await withTimeout(
+        measureLcpViaTracing(session, `${baseUrl}${route.path}`),
+        50000,
+        `lcp trace ${route.path}`
+      );
+      const wallClockMs = Date.now() - start;
 
-      const raw = await withTimeout(
+      const clsRaw = await withTimeout(
         evaluate(
           session,
-          `(() => {
-            const lcp = performance.getEntriesByType("largest-contentful-paint").pop();
-            const cls = performance.getEntriesByType("layout-shift")
-              .filter((e) => !e.hadRecentInput)
-              .reduce((sum, e) => sum + e.value, 0);
-            return JSON.stringify({
-              lcpMs: lcp ? lcp.startTime : null,
-              cls,
-            });
-          })()`
+          `JSON.stringify(performance.getEntriesByType("layout-shift")
+            .filter((e) => !e.hadRecentInput)
+            .reduce((sum, e) => sum + e.value, 0))`
         ),
         8000,
-        `vitals ${route.path}`
+        `cls ${route.path}`
       );
-      const parsed = JSON.parse(raw);
-      results.push({ ...route, ...parsed, wallClockMs: Date.now() - start });
+      results.push({ ...route, lcpMs, cls: JSON.parse(clsRaw), wallClockMs });
     } catch (err) {
       results.push({ ...route, error: String(err.message || err) });
     } finally {

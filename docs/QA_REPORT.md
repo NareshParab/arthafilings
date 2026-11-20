@@ -98,19 +98,25 @@ No unreachable interactive elements, no focus traps (tabbing reached the natural
 
 **LCP/CLS under throttling** (CPU 4× slowdown, Fast-4G network profile — 1.6Mbps↓/0.75Mbps↑/150ms RTT — mobile viewport 375×800):
 
-| Page | Wall-clock load time | CLS | LCP |
-|---|---|---|---|
-| home | 3.62s | 0 | not captured — see below |
-| service page | 3.79s | 0 | not captured |
-| checkout | 3.24s | 0 | not captured |
-| dashboard | 3.00s | 0 | not captured |
-| group page | 3.22s | 0 | not captured |
+| Page | LCP | CLS |
+|---|---|---|
+| home | 0.76s | 0 |
+| service page | 1.19s | 0 |
+| checkout | 0.57s | 0 |
+| dashboard | 1.12s | 0 |
+| group page | 0.64s | 0 |
 
-**Open item:** `performance.getEntriesByType("largest-contentful-paint")` consistently returned no entries in this headless CDP harness, even after forcing the tab to the foreground (`Page.bringToFront` + `Emulation.setFocusEmulationEnabled`) — LCP is only recorded while a page is "visible" per the spec, and that didn't resolve it. Getting a real LCP number needs either a full Lighthouse run or the trace-based `Performance.getMetrics`/`Tracing` CDP APIs rather than the Performance Timeline API read directly, which is out of scope for this pass. Using full wall-clock page-load time under the same throttling as a proxy: **home and the service page both exceed the 3-second goal** (3.62s, 3.79s); checkout, dashboard and the group page are under it. CLS is 0 on every page sampled — no layout shift observed.
+**All 5 pages are well under the 3-second goal** (worst case 1.19s, on a service page). CLS is 0 on every page sampled — no layout shift observed.
+
+**Follow-up (resolved): LCP measurement.** The original pass couldn't get `performance.getEntriesByType("largest-contentful-paint")` to return anything, even with the tab forced to the foreground — root cause confirmed: the LCP spec permanently suppresses web-API entries for any document that was ever non-visible during its lifetime, and a CDP-created tab has exactly that kind of hidden window around creation, regardless of `Page.bringToFront`. Fixed in `scripts/qa/perf.mjs` by reading LCP from the CDP `Tracing` domain instead (the `largestContentfulPaint::Candidate` trace event, timed against the matching `navigationStart` event) — this is the same approach lab tools like Lighthouse use to work around the same restriction, and it isn't subject to the web API's visibility rule. Verified empirically against the real local build before integrating. The wall-clock proxy from the original pass is no longer needed.
 
 **Cheap fixes applied:** none needed — no `<img>` tags without `next/image` sizing were found anywhere in `components/`/`app/` (the one raw `<img>`, a document-upload preview thumbnail, is already a small fixed-size thumbnail with `alt=""` deliberately, see item 2), and the project already uses `next/font`-equivalent system font stacks via Tailwind, not manually loaded web fonts.
 
-**Bigger, listed-not-fixed:** the ~312KB shared JS floor on every public page is the main lever for the two pages over the 3s goal — worth profiling with a bundle analyzer in a follow-up to see what's in the shared chunk (react-hook-form + zod + the full shadcn/base-ui component set are all in the dependency graph and likely candidates) and whether more of it can be deferred or server-rendered instead of shipped to the client.
+**Follow-up (investigated, not fixed): the ~312KB shared JS floor.** Confirmed via real network capture (not just chunk-name guessing) that `/` and `/about` — neither of which renders any form — load an identical shared chunk set, including a 148,835-byte chunk whose content is almost entirely `zod` (500+ occurrences) plus `react-hook-form` glue. Traced the actual static-import graph: that dependency pair is only genuinely used by `ServiceLeadForm`, itself only imported by `ServicePageTemplate` (116 of ~140 routes). The likely cause is Next/Turbopack's default chunk-splitting: a module used by a large majority of routes gets hoisted into a top-level shared bundle attached to every route's initial script list, not just the routes that need it.
+
+Attempted fix: wrapped `ServiceLeadForm` in `next/dynamic()` inside `ServicePageTemplate` to force a separate chunk boundary. Rebuilt and re-measured against a verified-clean production server (first measurement attempt was invalidated by a stale `next start` process still bound to the port from before the rebuild, which was serving 500s under the hood — caught this via a console-error sanity check before trusting the numbers). With a genuinely fresh server, the `zod` chunk was **still** present in home's script list at the same byte count — `next/dynamic` splits the *importing component's own* code into an async chunk, but Turbopack's vendor/framework cache-group still hoists the *node_modules dependencies* (`zod`, `react-hook-form`) into the shared bundle independent of whether the import site is static or dynamic. The change had no measurable effect, so it was reverted rather than kept as unjustified complexity.
+
+**Open item (genuinely unresolved):** shrinking the shared JS floor needs either a Turbopack-level chunk-splitting configuration this Next.js version doesn't yet expose, or restructuring `ServiceLeadForm` so its validation logic doesn't depend on `react-hook-form`/`zod` at all on routes that don't need them (a larger, riskier change — e.g. a lighter hand-rolled validation path for the lead form) — out of scope for a QA follow-up pass. `/about`, home, and the 9 group pages still ship ~149KB of react-hook-form/zod they never execute.
 
 ## 6. Mobile screenshots (375px)
 
@@ -133,7 +139,7 @@ The dashboard screenshot is the one that surfaced the item-2 auth-guard bug abov
 | 2. Page smoke test | PASS — 96/96 checks clean, after fixing 2 real app bugs |
 | 3. Contrast | PASS — 12/12 pairs, after 1 token fix |
 | 4. Keyboard/focus | PASS — 0 unreachable, 0 traps, 0 missing focus rings |
-| 5. Performance | 2 of 5 pages over the 3s-on-4G goal (proxy metric — LCP itself not capturable in this harness) |
+| 5. Performance | PASS — 5/5 pages under the 3s-on-4G goal (LCP 0.57s–1.19s), CLS 0 everywhere |
 | 6. Screenshots | 6/6 captured, all showing correct content |
 
 **Fixes made this pass:**
@@ -143,7 +149,10 @@ The dashboard screenshot is the one that surfaced the item-2 auth-guard bug abov
 - `scripts/qa/page-checks.mjs` — fixed 3 false positives in the smoke-test script itself (alt="" , textarea/select labelling, hidden shadow inputs).
 - `scripts/qa/cdp.mjs`, `scripts/qa/perf.mjs` — fixed a CDP event-listener leak (handlers never removed across 100+ navigations in one browser tab/session).
 
-**Open items (not fixed, for follow-up):**
-- LCP could not be captured through direct Performance Timeline reads in this headless CDP harness — needs a Lighthouse or trace-based follow-up measurement.
-- Home and the service-page template exceed the 3s-on-4G wall-clock goal under 4×CPU/Fast-4G throttling; the shared ~312KB JS floor on every public page is the main lever (see item 5) — a bundle-analyzer pass is a reasonable next step, out of scope here.
+**Follow-up pass (LCP measurement + bundle size):**
+- LCP is now measured for real via the CDP `Tracing` domain (see item 5) — all 5 pages pass the 3s goal with real numbers, no proxy metric needed anymore.
+- The ~312KB shared JS floor was investigated in depth (root cause confirmed: `zod`/`react-hook-form`, used by 116 of ~140 routes via `ServiceLeadForm`, gets hoisted into a bundle shared by every route). A `next/dynamic()` fix was attempted, verified not to reduce bytes (Turbopack's vendor cache-group hoists node_modules dependencies regardless of static-vs-dynamic import boundaries), and reverted. Still open — see item 5 for what a real fix would require.
+
+**Open items (not fixed):**
+- The ~312KB shared JS floor on every public page (`zod`/`react-hook-form` shipped to routes that never use them) — needs either a Turbopack chunk-splitting option this Next.js version doesn't expose yet, or restructuring `ServiceLeadForm`'s validation to not depend on those packages app-wide.
 - Footer social links remain `#` placeholders pending real URLs — already tracked as `[VERIFY]` in `lib/site-config.ts`, not newly introduced by this sweep.
