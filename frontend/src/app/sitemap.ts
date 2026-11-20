@@ -24,7 +24,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter((service) => {
       if (!inProduction) return true;
       const group = serviceGroups.find((item) => item.slug === service.group);
-      if (!group) return true;
+      if (!group) return false; // matches [service]/page.tsx's own notFound() for an unresolved group
       return getServiceContent(service, group).contentStatus !== "draft";
     })
     .map((service) => `/${service.slug}`);

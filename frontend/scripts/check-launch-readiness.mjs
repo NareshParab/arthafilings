@@ -14,7 +14,8 @@ import { termsContent, privacyContent, refundPolicyContent, disclaimerContent } 
 import { getSiteEnv } from "../src/lib/site-env.ts";
 
 const forced = process.argv.includes("--force");
-const isProductionCheck = forced || getSiteEnv() === "production";
+const resolvedSiteEnv = getSiteEnv();
+const isProductionCheck = forced || resolvedSiteEnv === "production";
 
 if (!isProductionCheck) {
   // Not a production build — this check is a no-op so normal dev/preview
@@ -24,10 +25,14 @@ if (!isProductionCheck) {
 
 const problems = [];
 
-// 0. NEXT_PUBLIC_SITE_ENV not set explicitly. getSiteEnv() already defaults
-// an unset value to "production" (mocks stay off), but a build should never
-// reach production by accident — the deployer must say so on purpose.
-if (!process.env.NEXT_PUBLIC_SITE_ENV) {
+// 0. NEXT_PUBLIC_SITE_ENV not set explicitly, in a build that actually
+// resolves to production. getSiteEnv() already defaults an unset value to
+// "production" (mocks stay off), but a build should never reach production
+// by accident — the deployer must say so on purpose. (This is separate from
+// `--force`, which can trigger isProductionCheck under NODE_ENV=development
+// too, where getSiteEnv() correctly returns "development" and this warning
+// would not apply.)
+if (resolvedSiteEnv === "production" && !process.env.NEXT_PUBLIC_SITE_ENV) {
   problems.push(
     `NEXT_PUBLIC_SITE_ENV is not set. This build will behave as production (mocks are off, which is safe), but you should set NEXT_PUBLIC_SITE_ENV=production explicitly before shipping to confirm that's intended.`
   );
@@ -96,6 +101,9 @@ for (const service of services) {
     whatIsIt: [content.whatIsIt.heading, ...content.whatIsIt.paragraphs].join(" "),
     whoNeedsIt: content.whoNeedsIt.join(" "),
     whatYouGet: content.whatYouGet.join(" "),
+    documentsNeeded: content.documentsNeeded
+      .map((group) => `${group.heading} ${group.items.join(" ")}`)
+      .join(" "),
     faqs: content.faqs.map((f) => `${f.question} ${f.answer}`).join(" "),
     packages: (content.packages ?? [])
       .map((p) => `${p.price ?? ""} ${p.govtFeeNote ?? ""} ${(p.features ?? []).join(" ")}`)
@@ -111,12 +119,20 @@ for (const service of services) {
   }
 }
 
-// 4. Legal pages (terms/privacy/refund/disclaimer) with a placeholder
-// "lastUpdated" date — these ship on every build, ready or not.
+// 4. Legal pages (terms/privacy/refund/disclaimer) ship their lastUpdated,
+// intro and every section's body on every build, ready or not — none of it
+// is behind a draft/ready gate the way service pages are, so any
+// [TBD]/[VERIFY] marker left in here goes straight to real visitors.
 for (const doc of [termsContent, privacyContent, refundPolicyContent, disclaimerContent]) {
-  const markers = findMarkers(doc.lastUpdated);
-  if (markers.length > 0) {
+  const lastUpdatedMarkers = findMarkers(doc.lastUpdated);
+  if (lastUpdatedMarkers.length > 0) {
     problems.push(`Legal page "${doc.title}" still has a placeholder lastUpdated ("${doc.lastUpdated}").`);
+  }
+  const bodyMarkers = findMarkers(
+    [doc.intro, ...doc.sections.flatMap((section) => [section.heading, ...section.paragraphs])].join(" ")
+  );
+  if (bodyMarkers.length > 0) {
+    problems.push(`Legal page "${doc.title}" still has ${bodyMarkers.join(", ")} in its body text.`);
   }
 }
 
@@ -159,13 +175,15 @@ function walk(dir, files = []) {
   return files;
 }
 
+const MOCK_API_REFERENCE_PATTERN = /(?:from|import|require)\s*\(?\s*["']@\/lib\/mock-api["']/;
+
 const mockApiImporters = [];
 for (const file of walk(srcDir)) {
   const relativePath = file.slice(srcDir.length + 1);
   if (TEST_PATH_PATTERN.test(relativePath)) continue;
   if (file.endsWith("/lib/mock-api.ts")) continue;
   const text = readFileSync(file, "utf8");
-  if (/from\s+["']@\/lib\/mock-api["']/.test(text)) {
+  if (MOCK_API_REFERENCE_PATTERN.test(text)) {
     mockApiImporters.push(`src/${relativePath}`);
   }
 }

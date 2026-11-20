@@ -15,7 +15,8 @@ export const metadata: Metadata = {
 };
 
 export default function AboutPage() {
-  const hideIntro = getSiteEnv() === "production" && hasPlaceholderMarker(aboutContent.intro);
+  const inProduction = getSiteEnv() === "production";
+  const hide = (value: string) => inProduction && hasPlaceholderMarker(value);
 
   return (
     <>
@@ -23,18 +24,20 @@ export default function AboutPage() {
 
       <section className="bg-card">
         <div className="mx-auto max-w-2xl space-y-6 px-4 py-14 sm:px-6">
-          {!hideIntro && <p className="text-foreground">{aboutContent.intro}</p>}
-          <p className="text-foreground">{aboutContent.mission}</p>
+          {!hide(aboutContent.intro) && <p className="text-foreground">{aboutContent.intro}</p>}
+          {!hide(aboutContent.mission) && <p className="text-foreground">{aboutContent.mission}</p>}
 
           <div>
             <h2 className="text-xl font-semibold text-navy">Our approach</h2>
             <ul className="mt-4 space-y-4">
-              {aboutContent.approach.map((item) => (
-                <li key={item.title}>
-                  <p className="font-semibold text-navy">{item.title}</p>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                </li>
-              ))}
+              {aboutContent.approach
+                .filter((item) => !hide(item.title) && !hide(item.description))
+                .map((item) => (
+                  <li key={item.title}>
+                    <p className="font-semibold text-navy">{item.title}</p>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                  </li>
+                ))}
             </ul>
           </div>
 
