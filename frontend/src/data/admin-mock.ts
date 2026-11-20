@@ -4,8 +4,9 @@
 // crawler or build to show. Replace this whole file with real API calls in
 // the backend phase.
 import type { AdminLead, AdminOrder, AdminUser } from "@/types/admin";
+import { isMockAllowed } from "@/lib/site-env";
 
-const isDev = process.env.NODE_ENV !== "production";
+const isDev = isMockAllowed();
 
 // 4 original names — not pulled from any client or reference site.
 const adminUsersSeed: AdminUser[] = [

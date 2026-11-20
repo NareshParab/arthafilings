@@ -1,6 +1,7 @@
 // MOCK: demo orders for the dashboard. Shown only outside production — in
 // production the dashboard only shows orders created in the mock session.
 import type { DeliveredDocument, Notification, Order, UploadedDocument } from "@/types";
+import { isMockAllowed } from "@/lib/site-env";
 
 export const demoOrders: Order[] = [
   {
@@ -178,6 +179,6 @@ export function getDemoNotifications(orderId: string): Notification[] {
 // Demo orders plus whatever this session created at checkout. Demo orders
 // never show in production — there, only session orders are shown.
 export function getDashboardOrders(sessionOrders: Order[]): Order[] {
-  const demo = process.env.NODE_ENV !== "production" ? demoOrders : [];
+  const demo = isMockAllowed() ? demoOrders : [];
   return [...demo, ...sessionOrders];
 }

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PageHeader from "@/components/layout/PageHeader";
 import PaymentMockFlow from "@/components/checkout/PaymentMockFlow";
 import type { PaymentMethod } from "@/types";
+import { isMockAllowed } from "@/lib/site-env";
 
 export const metadata: Metadata = {
   title: "Payment",
@@ -56,7 +57,7 @@ export default function PaymentMockPage({
   searchParams: Promise<{ order?: string; method?: string }>;
 }) {
   // MOCK: a stand-in payment partner screen for local testing only.
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!isMockAllowed()) notFound();
 
   return (
     <Suspense fallback={<PaymentMockSkeleton />}>
